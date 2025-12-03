@@ -1,8 +1,329 @@
 {% extends 'base.html' %}
 
-{% block title %}Challenge{% endblock %}
+{% block title %}Two Sum Problem - CodeQuest{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/leaderboard.css' %}">
+<style>
+    .challenge-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .problem-section,
+    .editor-section {
+        background: var(--surface);
+        border-radius: var(--radius-lg);
+        padding: 1.5rem;
+        border: 1px solid var(--border-color);
+    }
+
+    .code-editor {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        font-family: 'JetBrains Mono', monospace;
+        min-height: 400px;
+        resize: vertical;
+        width: 100%;
+        color: var(--text-primary);
+        font-size: 0.875rem;
+    }
+
+    .code-editor:focus {
+        outline: none;
+        border-color: var(--primary-500);
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    }
+
+    .test-case {
+        background: var(--bg-secondary);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border-left: 3px solid var(--primary-500);
+    }
+
+    .submission-item {
+        background: var(--surface);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .comment-box {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    @media (max-width: 1024px) {
+        .challenge-container {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<!-- Add your code in here -->
- <h1>Challenge Details</h1>
+<!-- Challenge Header -->
+<div class="dashboard-header animate-fade-in">
+    <div style="display: flex; justify-content: space-between; align-items: start;">
+        <div>
+            <h1><i class="fas fa-code"></i> Two Sum Problem</h1>
+            <p>Find two numbers that add up to a target value</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <span class="badge-modern badge-easy">
+                <i class="fas fa-circle"></i> Easy
+            </span>
+            <a href="/classrooms/" class="btn-modern btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Classroom
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content -->
+<div class="challenge-container animate-fade-in">
+    <!-- Problem Description -->
+    <div class="problem-section">
+        <h3 style="margin-bottom: 1rem; color: var(--text-primary);">
+            <i class="fas fa-book"></i> Problem Description
+        </h3>
+
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+            Given an array of integers <code>nums</code> and an integer <code>target</code>,
+            return indices of the two numbers such that they add up to <code>target</code>.
+        </p>
+
+        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
+            You may assume that each input would have exactly one solution, and you may not use the same element twice.
+        </p>
+
+        <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">
+            <i class="fas fa-lightbulb"></i> Example
+        </h4>
+
+        <div class="test-case">
+            <strong style="color: var(--text-primary);">Input:</strong>
+            <pre style="margin: 0.5rem 0; color: var(--text-secondary);">nums = [2, 7, 11, 15], target = 9</pre>
+            <strong style="color: var(--text-primary);">Output:</strong>
+            <pre style="margin: 0.5rem 0; color: var(--text-secondary);">[0, 1]</pre>
+            <strong style="color: var(--text-primary);">Explanation:</strong>
+            <p style="margin: 0.5rem 0 0 0; color: var(--text-secondary);">
+                Because nums[0] + nums[1] == 9, we return [0, 1].
+            </p>
+        </div>
+
+        <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">
+            <i class="fas fa-list"></i> Constraints
+        </h4>
+        <ul style="color: var(--text-secondary); padding-left: 1.5rem;">
+            <li>2 ≤ nums.length ≤ 10<sup>4</sup></li>
+            <li>-10<sup>9</sup> ≤ nums[i] ≤ 10<sup>9</sup></li>
+            <li>-10<sup>9</sup> ≤ target ≤ 10<sup>9</sup></li>
+            <li>Only one valid answer exists</li>
+        </ul>
+
+        <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">
+            <i class="fas fa-tags"></i> Tags
+        </h4>
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <span class="badge-modern badge-primary">Arrays</span>
+            <span class="badge-modern badge-primary">Hash Table</span>
+            <span class="badge-modern badge-primary">Two Pointers</span>
+        </div>
+    </div>
+
+    <!-- Code Editor -->
+    <div class="editor-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="margin: 0; color: var(--text-primary);">
+                <i class="fas fa-terminal"></i> Code Editor
+            </h3>
+            <select class="filter-select" style="width: auto; min-width: 150px;">
+                <option value="python">Python</option>
+                <option value="javascript">JavaScript</option>
+                <option value="java">Java</option>
+                <option value="cpp">C++</option>
+            </select>
+        </div>
+
+        <form method="POST" action="/challenge/1/submit/">
+            {% csrf_token %}
+            <textarea class="code-editor" name="code" placeholder="Write your solution here..." spellcheck="false">def twoSum(nums, target):
+    # Write your solution here
+    pass</textarea>
+
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="submit" class="btn-modern btn-primary" style="flex: 1;">
+                    <i class="fas fa-paper-plane"></i> Submit Solution
+                </button>
+                <button type="button" class="btn-modern btn-secondary" onclick="runTests()">
+                    <i class="fas fa-play"></i> Run Tests
+                </button>
+            </div>
+        </form>
+
+        <div style="margin-top: 1.5rem;">
+            <h4 style="margin-bottom: 1rem; color: var(--text-primary);">
+                <i class="fas fa-vial"></i> Test Results
+            </h4>
+            <div id="test-results" style="color: var(--text-secondary); font-size: 0.875rem;">
+                <p style="text-align: center; padding: 2rem; color: var(--text-tertiary);">
+                    <i class="fas fa-info-circle"></i> Run tests to see results
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Submission History -->
+<div class="section-header">
+    <h2><i class="fas fa-history"></i> Your Submissions</h2>
+</div>
+
+<div class="animate-fade-in" style="margin-bottom: 2rem;">
+    <div class="submission-item">
+        <div>
+            <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">
+                Submission #3
+            </div>
+            <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                <i class="fas fa-clock"></i> 2 days ago
+            </div>
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <span class="badge-modern" style="background-color: rgba(16, 185, 129, 0.1); color: var(--success);">
+                <i class="fas fa-check-circle"></i> Passed
+            </span>
+            <button class="btn-modern btn-secondary" style="padding: 0.5rem 1rem;">
+                <i class="fas fa-eye"></i> View Code
+            </button>
+        </div>
+    </div>
+
+    <div class="submission-item">
+        <div>
+            <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">
+                Submission #2
+            </div>
+            <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                <i class="fas fa-clock"></i> 3 days ago
+            </div>
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: center;">
+            <span class="badge-modern" style="background-color: rgba(239, 68, 68, 0.1); color: var(--error);">
+                <i class="fas fa-times-circle"></i> Failed
+            </span>
+            <button class="btn-modern btn-secondary" style="padding: 0.5rem 1rem;">
+                <i class="fas fa-eye"></i> View Code
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Discussions -->
+<div class="section-header">
+    <h2><i class="fas fa-comments"></i> Discussions</h2>
+</div>
+
+<div class="animate-fade-in">
+    <!-- Comment Form -->
+    <div class="card-modern" style="margin-bottom: 1.5rem;">
+        <h4 style="margin-bottom: 1rem; color: var(--text-primary);">
+            <i class="fas fa-comment-dots"></i> Add a Comment
+        </h4>
+        <form method="POST" action="/challenge/1/comment/">
+            {% csrf_token %}
+            <textarea class="form-control-modern" name="comment" rows="3"
+                placeholder="Ask a question or share a hint..." style="width: 100%; margin-bottom: 1rem;"></textarea>
+            <button type="submit" class="btn-modern btn-primary">
+                <i class="fas fa-paper-plane"></i> Post Comment
+            </button>
+        </form>
+    </div>
+
+    <!-- Comments List -->
+    <div class="comment-box">
+        <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem;">
+            <div class="user-avatar"
+                style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary-500), var(--primary-700)); border-radius: 50%;">
+            </div>
+            <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                    <div>
+                        <strong style="color: var(--text-primary);">Alex Johnson</strong>
+                        <span style="color: var(--text-tertiary); font-size: 0.875rem; margin-left: 0.5rem;">
+                            <i class="fas fa-clock"></i> 1 day ago
+                        </span>
+                    </div>
+                </div>
+                <p style="color: var(--text-secondary); margin: 0;">
+                    Great problem! I used a hash map to solve it in O(n) time. The key insight is to store the
+                    complement of each number as you iterate through the array.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="comment-box">
+        <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem;">
+            <div class="user-avatar"
+                style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--accent-cyan), var(--accent-teal)); border-radius: 50%;">
+            </div>
+            <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                    <div>
+                        <strong style="color: var(--text-primary);">Sarah Chen</strong>
+                        <span style="color: var(--text-tertiary); font-size: 0.875rem; margin-left: 0.5rem;">
+                            <i class="fas fa-clock"></i> 2 days ago
+                        </span>
+                    </div>
+                </div>
+                <p style="color: var(--text-secondary); margin: 0;">
+                    For beginners: Try the brute force approach first (nested loops), then optimize using a dictionary
+                    to track seen numbers and their indices.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function runTests() {
+        const resultsDiv = document.getElementById('test-results');
+        resultsDiv.innerHTML = `
+        <div style="padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: var(--radius-md); border-left: 3px solid var(--success); margin-bottom: 0.5rem;">
+            <strong style="color: var(--success);">✓ Test Case 1 Passed</strong>
+            <div style="font-size: 0.875rem; margin-top: 0.5rem; color: var(--text-secondary);">
+                Input: nums = [2,7,11,15], target = 9<br>
+                Expected: [0,1]<br>
+                Got: [0,1]
+            </div>
+        </div>
+        <div style="padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: var(--radius-md); border-left: 3px solid var(--success);">
+            <strong style="color: var(--success);">✓ Test Case 2 Passed</strong>
+            <div style="font-size: 0.875rem; margin-top: 0.5rem; color: var(--text-secondary);">
+                Input: nums = [3,2,4], target = 6<br>
+                Expected: [1,2]<br>
+                Got: [1,2]
+            </div>
+        </div>
+    `;
+    }
+</script>
+
 {% endblock %}

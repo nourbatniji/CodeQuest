@@ -1,9 +1,172 @@
 {% extends 'base.html' %}
 
-{% block title %}Dashboard{% endblock %}
+{% block title %}Dashboard - CodeQuest{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
 
 {% block content %}
-<!-- Add your code in here -->
- <h1>Dashboard</h1>
+<!-- Dashboard Header -->
+<div class="dashboard-header animate-fade-in">
+    <h1>Welcome back, {{ user.username|default:"Student" }}! 👋</h1>
+    <p>Ready to tackle some challenges today?</p>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid animate-fade-in">
+    <div class="stat-card">
+        <div class="stat-card-icon primary">
+            <i class="fas fa-trophy"></i>
+        </div>
+        <div class="stat-card-value">{{ total_solved|default:"0" }}</div>
+        <div class="stat-card-label">Challenges Solved</div>
+        <div class="stat-card-change positive">
+            <i class="fas fa-arrow-up"></i>
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-icon success">
+            <i class="fas fa-star"></i>
+        </div>
+        <div class="stat-card-value">{{ total_points|default:"0" }}</div>
+        <div class="stat-card-label">Total Points</div>
+        <div class="stat-card-change positive">
+        </div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-icon warning">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-card-value">{{ classrooms_joined|default:"0" }}</div>
+        <div class="stat-card-label">Classrooms Joined</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-icon info">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="stat-card-value">#{{ global_rank|default:"--" }}</div>
+        <div class="stat-card-label">Global Rank</div>
+        <div class="stat-card-change positive">
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="section-header">
+    <h2>Quick Actions</h2>
+</div>
+<div class="quick-actions animate-fade-in">
+    <a href="/classrooms" class="quick-action-btn">
+        <i class="fas fa-users"></i>
+        <span>Browse Classrooms</span>
+    </a>
+    <a href="/challenges" class="quick-action-btn">
+        <i class="fas fa-code"></i>
+        <span>Explore Challenges</span>
+    </a>
+    <a href="/leaderboard" class="quick-action-btn">
+        <i class="fas fa-chart-bar"></i>
+        <span>View Leaderboard</span>
+    </a>
+    <a href="/profile" class="quick-action-btn">
+        <i class="fas fa-user"></i>
+        <span>My Profile</span>
+    </a>
+</div>
+
+<!-- My Classrooms -->
+<div class="section-header">
+    <h2><i class="fas fa-users"></i> My Classrooms</h2>
+    <a href="/classrooms">
+        View All <i class="fas fa-arrow-right"></i>
+    </a>
+</div>
+
+<div class="classroom-grid animate-fade-in">
+    <!-- Sample Classroom Card 1 -->
+    <div class="classroom-card" onclick="window.location.href='/classroom/1'">
+        <div class="classroom-card-header">
+            <h3>Python Fundamentals</h3>
+            <p>Master the basics of Python programming</p>
+        </div>
+        <div class="classroom-card-body">
+            <div class="classroom-meta">
+                <div class="classroom-meta-item">
+                    <i class="fas fa-user-tie"></i>
+                    <span>Prof. Johnson</span>
+                </div>
+                <div class="classroom-meta-item">
+                    <i class="fas fa-users"></i>
+                    <span>45 members</span>
+                </div>
+            </div>
+            <div class="classroom-meta">
+                <div class="classroom-meta-item">
+                    <i class="fas fa-code"></i>
+                    <span>12 challenges</span>
+                </div>
+                <div class="classroom-meta-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>8 completed</span>
+                </div>
+            </div>
+            <div class="progress-modern">
+                <div class="progress-bar-modern" style="width: 67%;"></div>
+            </div>
+        </div>
+        <div class="classroom-card-footer">
+            <span style="font-size: 0.875rem; color: var(--text-secondary);">67% Complete</span>
+            <span class="badge-modern badge-primary">Active</span>
+        </div>
+    </div>
+
+
+</div>
+
+<!-- Recently Solved Challenges -->
+<div class="section-header">
+    <h2><i class="fas fa-history"></i> Recently Solved</h2>
+    <a href="/challenges">
+        View All <i class="fas fa-arrow-right"></i>
+    </a>
+</div>
+
+<div class="challenge-list animate-fade-in">
+    <!-- Sample Challenge 1 -->
+    <div class="challenge-item" onclick="window.location.href='/challenge/1'">
+        <div class="challenge-info">
+            <div class="challenge-title">Two Sum Problem</div>
+            <div class="challenge-meta">
+                <span class="badge-modern badge-easy">
+                    <i class="fas fa-circle"></i> Easy
+                </span>
+                <span style="color: var(--text-secondary); font-size: 0.875rem;">
+                    <i class="fas fa-folder"></i> Python Fundamentals
+                </span>
+                <span style="color: var(--text-secondary); font-size: 0.875rem;">
+                    <i class="fas fa-clock"></i> Solved 2 days ago
+                </span>
+            </div>
+        </div>
+        <div class="challenge-actions">
+            <span class="badge-modern" style="background-color: rgba(16, 185, 129, 0.1); color: var(--success);">
+                <i class="fas fa-check-circle"></i> Passed
+            </span>
+        </div>
+    </div>
+ 
+</div>
+
+<!-- Recommended Challenges -->
+<div class="section-header" style="margin-top: 2rem;">
+    <h2><i class="fas fa-lightbulb"></i> Recommended for You</h2>
+</div>
+
+
 
 {% endblock %}
