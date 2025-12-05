@@ -2,6 +2,7 @@ from django.db import models
 import bcrypt, re
 from django.utils import timezone
 from django.contrib.auth import get_user_model
+from django.utils.text import slugify
 
 User = get_user_model()
 
@@ -235,3 +236,40 @@ def create_initial_badges():
             value=b["value"],
             defaults={"description": b["desc"]}
         )
+#Challenge model
+class Challenge(models.Model):
+
+    DIFFICULTY_CHOICES = [
+        ("easy", "Easy"),
+        ("medium", "Medium"),
+        ("hard", "Hard"),
+    ]
+
+    title = models.CharField(max_length=150)
+    slug = models.SlugField(unique=True, blank=True)
+    description = models.TextField()
+
+    input_format = models.TextField(blank=True)
+    output_format = models.TextField(blank=True)
+    sample_io = models.TextField(blank=True)
+
+    difficulty = models.CharField(max_length=10, choices=DIFFICULTY_CHOICES, default='easy')
+    tags = models.CharField(max_length=255, blank=True)
+
+    classroom = models.ForeignKey(
+        Classroom,
+        on_delete=models.CASCADE,
+        related_name="challenges"
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+#Slug Auto-generation
+def save(self, *args, **kwargs):
+    if not self.slug:
+        self.slug = slugify(self.title)
+    super().save(*args, **kwargs)
+

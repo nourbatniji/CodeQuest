@@ -77,3 +77,11 @@ admin.site.register(
         list_filter=['classroom', 'created_by', 'pinned', 'created_at']
     )
 )
+
+#Build challenge creation via Django Admin
+@admin.register(Challenge)
+class ChallengeAdmin(admin.ModelAdmin):
+    list_display = ("title", "difficulty", "classroom", "created_at")
+    list_filter = ("difficulty", "classroom")
+    search_fields = ("title", "tags")
+    prepopulated_fields = {"slug": ("title",)}
