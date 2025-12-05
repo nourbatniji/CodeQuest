@@ -1,0 +1,119 @@
+[
+  {
+    "model": "auth.user",
+    "pk": 1,
+    "fields": {
+      "username": "mentor1",
+      "password": "pbkdf2_sha256$260000$dummy$hash",
+      "is_superuser": true,
+      "is_staff": true,
+      "is_active": true
+    }
+  },
+  {
+    "model": "auth.user",
+    "pk": 2,
+    "fields": {
+      "username": "student1",
+      "password": "pbkdf2_sha256$260000$dummy$hash",
+      "is_superuser": false,
+      "is_staff": false,
+      "is_active": true
+    }
+  },
+  {
+    "model": "my_app.classroom",
+    "pk": 1,
+    "fields": {
+      "name": "Python Basics",
+      "slug": "python-basics",
+      "description": "Introduction to Python",
+      "mentor": 1,
+      "created_at": "2025-12-03T22:00:00Z"
+    }
+  },
+  {
+    "model": "my_app.classroommembership",
+    "pk": 1,
+    "fields": {
+      "user": 2,
+      "classroom": 1,
+      "joined_at": "2025-12-03T22:05:00Z"
+    }
+  },
+  {
+    "model": "my_app.challenge",
+    "pk": 1,
+    "fields": {
+      "title": "Hello World",
+      "slug": "hello-world",
+      "classroom": 1,
+      "description": "Print Hello World",
+      "input_description": "",
+      "output_description": "",
+      "sample_input": "",
+      "sample_output": "Hello World",
+      "difficulty": "easy",
+      "tags": "python,beginner",
+      "created_at": "2025-12-03T22:10:00Z"
+    }
+  },
+  {
+    "model": "my_app.submission",
+    "pk": 1,
+    "fields": {
+      "user": 2,
+      "challenge": 1,
+      "code": "print('Hello World')",
+      "language": "python",
+      "status": "passed",
+      "points_awarded": 10,
+      "created_at": "2025-12-03T22:15:00Z",
+      "updated_at": "2025-12-03T22:15:00Z"
+    }
+  },
+  {
+    "model": "my_app.comment",
+    "pk": 1,
+    "fields": {
+      "user": 2,
+      "challenge": 1,
+      "content": "Great challenge!",
+      "parent": null,
+      "created_at": "2025-12-03T22:20:00Z"
+    }
+  },
+  {
+    "model": "my_app.badge",
+    "pk": 1,
+    "fields": {
+      "name": "First Solve",
+      "code": "first_solve",
+      "description": "Awarded for first solved challenge",
+      "requirement_type": "first_solve",
+      "requirement_value": 1,
+      "icon": ""
+    }
+  },
+  {
+    "model": "my_app.userbadge",
+    "pk": 1,
+    "fields": {
+      "user": 2,
+      "badge": 1,
+      "awarded_at": "2025-12-03T22:25:00Z"
+    }
+  },
+  {
+    "model": "my_app.announcement",
+    "pk": 1,
+    "fields": {
+      "classroom": 1,
+      "title": "Welcome!",
+      "content": "Welcome to Python Basics classroom.",
+      "created_by": 1,
+      "created_at": "2025-12-03T22:30:00Z",
+      "pinned": true
+    }
+  }
+]
