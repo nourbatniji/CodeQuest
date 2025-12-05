@@ -307,27 +307,22 @@
 </div>
 
 <script>
-    function runTests() {
-        const resultsDiv = document.getElementById('test-results');
-        resultsDiv.innerHTML = `
-        <div style="padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: var(--radius-md); border-left: 3px solid var(--success); margin-bottom: 0.5rem;">
-            <strong style="color: var(--success);">✓ Test Case 1 Passed</strong>
-            <div style="font-size: 0.875rem; margin-top: 0.5rem; color: var(--text-secondary);">
-                Input: nums = [2,7,11,15], target = 9<br>
-                Expected: [0,1]<br>
-                Got: [0,1]
-            </div>
-        </div>
-        <div style="padding: 1rem; background: rgba(16, 185, 129, 0.1); border-radius: var(--radius-md); border-left: 3px solid var(--success);">
-            <strong style="color: var(--success);">✓ Test Case 2 Passed</strong>
-            <div style="font-size: 0.875rem; margin-top: 0.5rem; color: var(--text-secondary);">
-                Input: nums = [3,2,4], target = 6<br>
-                Expected: [1,2]<br>
-                Got: [1,2]
-            </div>
+   async function runTests() {
+    const resultsDiv = document.getElementById("test-results");
+    resultsDiv.innerHTML = `<p style="color: yellow;">Running code...</p>`;
+
+    const result = await runCode();
+
+    // Extract the output
+    const output = result.stdout || result.stderr || result.compile_output || "No output";
+
+    resultsDiv.innerHTML = `
+        <div style="padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 8px;">
+            <strong>Result:</strong>
+            <pre>${output}</pre>
         </div>
     `;
-    }
+}
 </script>
 
 {% endblock %}

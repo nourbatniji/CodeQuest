@@ -1,3 +1,4 @@
+//submission solve of challenge in submission table instantly 
 document.addEventListener("DOMContentLoaded", function () {
     const submitBtn = document.getElementById("submit-btn");
     const codeEditor = document.getElementById("code-editor");
@@ -53,3 +54,54 @@ document.addEventListener("DOMContentLoaded", function () {
         submitBtn.disabled = false;
     });
 });
+
+
+//using Judge0 CE API 
+async function runCode() {
+    const code = document.getElementById("code-editor").value;
+    const language = document.querySelector("select.filter-select").value;
+
+    // Specify the language number at Judge0
+    const languageIds = {
+        python: 71,
+        javascript: 63,
+        java: 62,
+        cpp: 54
+    };
+
+    const selectedLanguageId = languageIds[language];
+
+    // Data to be sent to Judge0
+    const payload = {
+        source_code: code,
+        language_id: selectedLanguageId,
+        stdin: ""
+    };
+
+    // Send the first request to create submission
+    const createResponse = await fetch("https://ce.judge0.com/submissions/?base64_encoded=false&wait=false", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    });
+
+    const createData = await createResponse.json();
+
+    const token = createData.token;
+
+    //Waiting for execution (Polling)
+    let result;
+    while (true) {
+        const getResponse = await fetch(`https://ce.judge0.com/submissions/${token}?base64_encoded=false`);
+        const getData = await getResponse.json();
+
+        if (getData.status && getData.status.id >= 3) {
+            result = getData;
+            break;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 500));
+    }
+
+    return result;
+}
