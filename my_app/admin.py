@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Classroom, ClassroomMembership, Challenge, Submission, Comment,
-    Badge, UserBadge, Announcement
+    Badge, UserBadge
 )
 
 def create_admin(model, search_fields=None, list_filter=None):
@@ -65,15 +65,6 @@ admin.site.register(
     UserBadge,
     create_admin(
         UserBadge,
-        list_filter=['user', 'badge', 'awarded_at']
-    )
-)
-
-admin.site.register(
-    Announcement,
-    create_admin(
-        Announcement,
-        search_fields=['title', 'content'],
-        list_filter=['classroom', 'created_by', 'pinned', 'created_at']
+        list_filter=['user', 'badge', 'earned_date']
     )
 )
