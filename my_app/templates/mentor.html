@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}Mentor Dashboard - CodeQuest{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<!-- Mentor Dashboard Header -->
+<div class="dashboard-header animate-fade-in">
+    <h1>Mentor Dashboard</h1>
+    <p>Manage your classrooms and track student progress</p>
+</div>
+
+<!-- Quick Stats -->
+<div class="stats-grid animate-fade-in">
+    <div class="stat-card">
+        <div class="stat-card-value">3</div>
+        <div class="stat-card-label">My Classrooms</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-value">135</div>
+        <div class="stat-card-label">Total Students</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-value">47</div>
+        <div class="stat-card-label">Total Challenges</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-value">892</div>
+        <div class="stat-card-label">Submissions</div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="section-header">
+    <h2>Quick Actions</h2>
+</div>
+<div class="quick-actions animate-fade-in">
+    <a href="/admin" class="quick-action-btn">
+        <i class="fas fa-plus-circle"></i>
+        <span>Create Classroom</span>
+    </a>
+    <a href="/admin" class="quick-action-btn">
+        <i class="fas fa-code"></i>
+        <span>Add Challenge</span>
+    </a>
+    <a href="/admin" class="quick-action-btn">
+        <i class="fas fa-cog"></i>
+        <span>Django Admin</span>
+    </a>
+</div>
+
+<!-- My Classrooms -->
+<div class="section-header">
+    <h2><i class="fas fa-users"></i> My Classrooms</h2>
+    <a href="/admin">
+        Manage in Admin <i class="fas fa-external-link-alt"></i>
+    </a>
+</div>
+
+<div class="classroom-grid animate-fade-in">
+    <!-- Classroom Card 1 -->
+    <div class="classroom-card" onclick="window.location.href='/classroom/1'">
+        <div class="classroom-card-header">
+            <h3>Python Fundamentals</h3>
+        </div>
+        <div class="classroom-card-body">
+            <div class="classroom-meta">
+                <div class="classroom-meta-item">
+                    <i class="fas fa-users"></i>
+                    <span>45 students</span>
+                </div>
+                <div class="classroom-meta-item">
+                    <i class="fas fa-code"></i>
+                    <span>12 challenges</span>
+                </div>
+            </div>
+            <div class="classroom-meta">
+                <div class="classroom-meta-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>234 submissions</span>
+                </div>
+                <div class="classroom-meta-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>67% avg completion</span>
+                </div>
+            </div>
+        </div>
+        <div class="classroom-card-footer">
+            <span style="font-size: 0.875rem; color: var(--text-secondary);">
+                <i class="fas fa-clock"></i> Active
+            </span>
+            <button class="btn-modern btn-primary"
+                onclick="event.stopPropagation(); window.location.href='/classroom/1'">
+                <i class="fas fa-eye"></i> View
+            </button>
+        </div>
+    </div>
+
+    <!-- Classroom Card 2 -->
+    <div class="classroom-card" onclick="window.location.href='/classroom/2'">
+        <div class="classroom-card-header">
+            <h3>Data Structures & Algorithms</h3>
+        </div>
+        <div class="classroom-card-body">
+            <div class="classroom-meta">
+                <div class="classroom-meta-item">
+                    <i class="fas fa-users"></i>
+                    <span>38 students</span>
+                </div>
+                <div class="classroom-meta-item">
+                    <i class="fas fa-code"></i>
+                    <span>20 challenges</span>
+                </div>
+            </div>
+            <div class="classroom-meta">
+                <div class="classroom-meta-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>412 submissions</span>
+                </div>
+                <div class="classroom-meta-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>54% avg completion</span>
+                </div>
+            </div>
+        </div>
+        <div class="classroom-card-footer">
+            <span style="font-size: 0.875rem; color: var(--text-secondary);">
+                <i class="fas fa-clock"></i> Active
+            </span>
+            <button class="btn-modern btn-primary"
+                onclick="event.stopPropagation(); window.location.href='/classroom/2'">
+                <i class="fas fa-eye"></i> View
+            </button>
+        </div>
+    </div>
+
+   
+</div>
+
+<!-- Recent Activity -->
+<div class="section-header" style="margin-top: 2rem;">
+    <h2><i class="fas fa-history"></i> Recent Submissions</h2>
+</div>
+
+{% endblock %}

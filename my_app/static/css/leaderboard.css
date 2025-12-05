@@ -1,0 +1,317 @@
+/* ===================================
+   LEADERBOARD PAGE STYLES
+   =================================== */
+
+.leaderboard-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.leaderboard-header h1 {
+    font-size: 2.5rem;
+    background: linear-gradient(135deg, var(--primary-500), var(--accent-purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+}
+
+.leaderboard-filters {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid var(--border-color);
+}
+
+.filter-row {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-group {
+    flex: 1;
+    min-width: 200px;
+}
+
+.filter-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 0.5rem;
+}
+
+.filter-select {
+    width: 100%;
+    padding: 0.625rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+/* Top Performers Cards */
+.top-performers {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.top-performer-card {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+    text-align: center;
+    transition: all var(--transition-base);
+}
+
+.top-performer-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.top-performer-card.gold {
+    border-color: #fbbf24;
+    background: linear-gradient(135deg, rgba(251, 191, 36, 0.05), rgba(251, 191, 36, 0.1));
+}
+
+.top-performer-card.silver {
+    border-color: #94a3b8;
+    background: linear-gradient(135deg, rgba(148, 163, 184, 0.05), rgba(148, 163, 184, 0.1));
+}
+
+.top-performer-card.bronze {
+    border-color: #f97316;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.05), rgba(249, 115, 22, 0.1));
+}
+
+.performer-rank {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.performer-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin: 0 auto 1rem;
+    border: 3px solid var(--border-color);
+}
+
+.performer-name {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.performer-stats {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 1rem;
+}
+
+.performer-stat {
+    text-align: center;
+}
+
+.performer-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-500);
+}
+
+.performer-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+/* Leaderboard Table */
+.leaderboard-table-container {
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+
+.leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.leaderboard-table thead {
+    background: var(--bg-secondary);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.leaderboard-table th {
+    padding: 1rem 1.5rem;
+    text-align: left;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.leaderboard-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+    transition: all var(--transition-fast);
+}
+
+.leaderboard-table tbody tr:hover {
+    background-color: var(--bg-secondary);
+}
+
+.leaderboard-table tbody tr.current-user {
+    background-color: rgba(99, 102, 241, 0.05);
+    border-left: 3px solid var(--primary-500);
+}
+
+.leaderboard-table td {
+    padding: 1.25rem 1.5rem;
+    color: var(--text-primary);
+}
+
+.rank-cell {
+    font-weight: 700;
+    font-size: 1.125rem;
+}
+
+.rank-cell.top-3 {
+    color: var(--primary-500);
+}
+
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--border-color);
+}
+
+.user-info {
+    flex: 1;
+}
+
+.user-name {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.125rem;
+}
+
+.user-level {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.points-cell {
+    font-weight: 700;
+    color: var(--primary-500);
+    font-size: 1.125rem;
+}
+
+.badges-cell {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.badge-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--primary-500);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.75rem;
+}
+
+/* My Rank Card */
+.my-rank-card {
+    background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
+    border-radius: var(--radius-lg);
+    padding: 2rem;
+    color: white;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.my-rank-info h3 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+    color: white;
+}
+
+.my-rank-info p {
+    opacity: 0.9;
+    margin: 0;
+    color: white;
+}
+
+.my-rank-stats {
+    display: flex;
+    gap: 2rem;
+}
+
+.my-rank-stat {
+    text-align: center;
+}
+
+.my-rank-stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: white;
+}
+
+.my-rank-stat-label {
+    font-size: 0.875rem;
+    opacity: 0.9;
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .leaderboard-table-container {
+        overflow-x: auto;
+    }
+
+    .leaderboard-table th,
+    .leaderboard-table td {
+        padding: 0.75rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .my-rank-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 1.5rem;
+    }
+
+    .top-performers {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1,0 +1,106 @@
+/* ===================================
+   NAVIGATION BAR STYLES
+   =================================== */
+
+.navbar-codequest {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    padding: 0.75rem 0;
+    transition: all var(--transition-base);
+}
+
+.navbar-codequest .navbar-brand {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-600);
+    transition: color var(--transition-fast);
+}
+
+.navbar-codequest .navbar-brand:hover {
+    color: var(--primary-700);
+}
+
+.navbar-codequest .nav-link {
+    color: var(--text-secondary);
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius-md);
+    transition: all var(--transition-fast);
+    position: relative;
+}
+
+.navbar-codequest .nav-link:hover {
+    color: var(--primary-500);
+    background-color: var(--bg-secondary);
+}
+
+.navbar-codequest .nav-link.active {
+    color: var(--primary-500);
+    background-color: rgba(99, 102, 241, 0.1);
+}
+
+/* Dark Mode Toggle Button */
+.theme-toggle {
+    background: var(--surface);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    margin-left: 0.5rem;
+}
+
+
+.theme-toggle i {
+    font-size: 1.125rem;
+}
+
+/* Navbar Toggler */
+.navbar-toggler {
+    border: 1px solid var(--border-color);
+    padding: 0.5rem;
+}
+
+.navbar-toggler:focus {
+    box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(99, 102, 241, 1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* Profile Dropdown */
+.profile-dropdown {
+    position: relative;
+}
+
+.profile-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px solid var(--primary-500);
+    cursor: pointer;
+    transition: transform var(--transition-fast);
+}
+
+.profile-avatar:hover {
+    transform: scale(1.1);
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+    .navbar-codequest .nav-link {
+        padding: 0.75rem 1rem;
+        margin: 0.25rem 0;
+    }
+
+    .theme-toggle {
+        margin: 1rem 0;
+    }
+}

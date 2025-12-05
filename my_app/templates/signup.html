@@ -1,8 +1,103 @@
 {% extends 'base.html' %}
 
-{% block title %}Register{% endblock %}
+{% block title %}Sign Up - CodeQuest{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/auth.css' %}">
+{% endblock %}
 
 {% block content %}
-<!-- Add your code in here -->
- <h1>Register</h1>
+<div class="auth-container">
+    <div class="auth-card animate-fade-in">
+
+        <div class="auth-body">
+            <!-- Error Messages -->
+            {% if error %}
+            <div class="alert-modern alert-error">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ error }}</span>
+            </div>
+            {% endif %}
+
+            <form method="POST" action="/signup/">
+                {% csrf_token %}
+
+                <div class="form-group">
+                    <label class="form-label" for="username">
+                        <i class="fas fa-user"></i> Username
+                    </label>
+                    <div class="input-group-modern">
+                        <input type="text" id="username" name="username" class="form-control-modern"
+                            placeholder="Choose a username" required autofocus>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="email">
+                        <i class="fas fa-envelope"></i> Email Address
+                    </label>
+                    <div class="input-group-modern">
+                        <input type="email" id="email" name="email" class="form-control-modern"
+                            placeholder="your.email@example.com" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">
+                        <i class="fas fa-lock"></i> Password
+                    </label>
+                    <div class="input-group-modern">
+                        <input type="password" id="password" name="password" class="form-control-modern"
+                            placeholder="Create a strong password" required>
+                        <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                            <i class="fas fa-eye" id="password-icon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="confirm_password">
+                        <i class="fas fa-lock"></i> Confirm Password
+                    </label>
+                    <div class="input-group-modern">
+                        <input type="password" id="confirm_password" name="confirm_password" class="form-control-modern"
+                            placeholder="Re-enter your password" required>
+                        <button type="button" class="password-toggle" onclick="togglePassword('confirm_password')">
+                            <i class="fas fa-eye" id="confirm_password-icon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-auth btn-auth-primary">
+                    <i class="fas fa-user-plus"></i> Create Account
+                </button>
+            </form>
+        </div>
+
+        <div class="auth-footer">
+            <p>
+                Already have an account?
+                <a href="/login/">Log in here</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function togglePassword(inputId) {
+        const input = document.getElementById(inputId);
+        const icon = document.getElementById(inputId + '-icon');
+
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye');
+            icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash');
+            icon.classList.add('fa-eye');
+        }
+    }
+</script>
 {% endblock %}

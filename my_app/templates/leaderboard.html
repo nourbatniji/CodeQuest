@@ -1,9 +1,154 @@
 {% extends 'base.html' %}
 
-{% block title %}Leaderboard{% endblock %}
+{% block title %}Leaderboard - CodeQuest{% endblock %}
+
+{% block extra_css %}
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/leaderboard.css' %}">
+{% endblock %}
 
 {% block content %}
-<!-- Add your code in here -->
- <h1>Leaderboard</h1>
+<!-- Leaderboard Header -->
+<div class="leaderboard-header animate-fade-in">
+    <h1><i class="fas fa-trophy"></i> Global Leaderboard</h1>
+    <p style="color: var(--text-secondary); font-size: 1.125rem;">Compete with coders worldwide</p>
+</div>
+
+<!-- My Rank Card -->
+<div class="my-rank-card animate-fade-in">
+    <div class="my-rank-info">
+        <h3>Your Current Rank</h3>
+        <p>You're doing great! Keep solving challenges to climb higher.</p>
+    </div>
+    <div class="my-rank-stats">
+        <div class="my-rank-stat">
+            <div class="my-rank-stat-value">#{{ user_rank|default:"47" }}</div>
+            <div class="my-rank-stat-label">Global Rank</div>
+        </div>
+        <div class="my-rank-stat">
+            <div class="my-rank-stat-value">{{ user_points|default:"850" }}</div>
+            <div class="my-rank-stat-label">Total Points</div>
+        </div>
+        <div class="my-rank-stat">
+            <div class="my-rank-stat-value">+{{ rank_change|default:"12" }}</div>
+            <div class="my-rank-stat-label">This Week</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="leaderboard-filters animate-fade-in">
+    <div class="filter-row">
+        <div class="filter-group">
+            <label class="filter-label">Time Range</label>
+            <select class="filter-select" id="timeRange">
+                <option value="all">All Time</option>
+                <option value="week">This Week</option>
+                <option value="month">This Month</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label class="filter-label">Classroom</label>
+            <select class="filter-select" id="classroom">
+                <option value="all">All Classrooms</option>
+                <option value="1">Python Fundamentals</option>
+                <option value="2">Data Structures & Algorithms</option>
+                <option value="3">Web Development</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label class="filter-label">Sort By</label>
+            <select class="filter-select" id="sortBy">
+                <option value="points">Points</option>
+                <option value="challenges">Challenges Solved</option>
+                <option value="streak">Streak</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<!-- Top 3 Performers -->
+<div class="section-header">
+    <h2>Top Performers</h2>
+</div>
+
+<div class="top-performers animate-fade-in">
+    <!-- Gold Medal -->
+    <div class="top-performer-card gold">
+        <div class="performer-name">Alex Johnson</div>
+        <div class="user-level">Expert Coder</div>
+        <div class="performer-stats">
+            <div class="performer-stat">
+                <div class="performer-stat-value">2,450</div>
+                <div class="performer-stat-label">Points</div>
+            </div>
+            <div class="performer-stat">
+                <div class="performer-stat-value">87</div>
+                <div class="performer-stat-label">Solved</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Silver Medal -->
+    <div class="top-performer-card silver">
+        <div class="performer-name">Sarah Chen</div>
+        <div class="user-level">Advanced Coder</div>
+        <div class="performer-stats">
+            <div class="performer-stat">
+                <div class="performer-stat-value">2,180</div>
+                <div class="performer-stat-label">Points</div>
+            </div>
+            <div class="performer-stat">
+                <div class="performer-stat-value">76</div>
+                <div class="performer-stat-label">Solved</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bronze Medal -->
+    <div class="top-performer-card bronze">
+        <div class="performer-name">Mike Rodriguez</div>
+        <div class="user-level">Advanced Coder</div>
+        <div class="performer-stats">
+            <div class="performer-stat">
+                <div class="performer-stat-value">1,950</div>
+                <div class="performer-stat-label">Points</div>
+            </div>
+            <div class="performer-stat">
+                <div class="performer-stat-value">68</div>
+                <div class="performer-stat-label">Solved</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Leaderboard Table -->
+<div class="section-header" style="margin-top: 2rem;">
+    <h2>Rankings</h2>
+</div>
+
+<div class="leaderboard-table-container animate-fade-in">
+    <table class="leaderboard-table">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>User</th>
+                <th>Points</th>
+                <th>Solved</th>
+                <th>Badges</th>
+                <th>Streak</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>winners info</td>
+            </tr>
+            <tr>
+                <td>winners info</td>
+            </tr>
+          
+        </tbody>
+    </table>
+</div>
 
 {% endblock %}
