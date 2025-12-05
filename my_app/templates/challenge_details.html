@@ -6,6 +6,7 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'css/leaderboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/challenge_details.css' %}">
 <style>
     .challenge-container {
         display: grid;
@@ -81,8 +82,8 @@
 <div class="dashboard-header animate-fade-in">
     <div style="display: flex; justify-content: space-between; align-items: start;">
         <div>
-            <h1><i class="fas fa-code"></i> Two Sum Problem</h1>
-            <p>Find two numbers that add up to a target value</p>
+            <h1><i class="fas fa-code"></i> {{challenge.title}}</h1>
+            <p>{{challenge.description}}</p>
         </div>
         <div style="display: flex; gap: 0.5rem; align-items: center;">
             <span class="badge-modern badge-easy">
@@ -104,12 +105,11 @@
         </h3>
 
         <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
-            Given an array of integers <code>nums</code> and an integer <code>target</code>,
-            return indices of the two numbers such that they add up to <code>target</code>.
+            {{challenge.input_description}}
         </p>
 
         <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
-            You may assume that each input would have exactly one solution, and you may not use the same element twice.
+            {{challenge.output_description}}
         </p>
 
         <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">
@@ -118,9 +118,9 @@
 
         <div class="test-case">
             <strong style="color: var(--text-primary);">Input:</strong>
-            <pre style="margin: 0.5rem 0; color: var(--text-secondary);">nums = [2, 7, 11, 15], target = 9</pre>
+            <pre style="margin: 0.5rem 0; color: var(--text-secondary);">{{challenge.sample_input}}</pre>
             <strong style="color: var(--text-primary);">Output:</strong>
-            <pre style="margin: 0.5rem 0; color: var(--text-secondary);">[0, 1]</pre>
+            <pre style="margin: 0.5rem 0; color: var(--text-secondary);">{{challenge.sample_output}}</pre>
             <strong style="color: var(--text-primary);">Explanation:</strong>
             <p style="margin: 0.5rem 0 0 0; color: var(--text-secondary);">
                 Because nums[0] + nums[1] == 9, we return [0, 1].
@@ -141,14 +141,14 @@
             <i class="fas fa-tags"></i> Tags
         </h4>
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-            <span class="badge-modern badge-primary">Arrays</span>
+            <span class="badge-modern badge-primary">{{challenge.tags}}</span>
             <span class="badge-modern badge-primary">Hash Table</span>
             <span class="badge-modern badge-primary">Two Pointers</span>
         </div>
     </div>
 
     <!-- Code Editor -->
-    <div class="editor-section">
+    <div class="editor-section" id="challenge-data" data-slug="{{ challenge.slug }}">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
             <h3 style="margin: 0; color: var(--text-primary);">
                 <i class="fas fa-terminal"></i> Code Editor
@@ -163,17 +163,21 @@
 
         <form method="POST" action="/challenge/1/submit/">
             {% csrf_token %}
-            <textarea class="code-editor" name="code" placeholder="Write your solution here..." spellcheck="false">def twoSum(nums, target):
-    # Write your solution here
-    pass</textarea>
-
+            <textarea id="code-editor" class="code-editor" name="code" placeholder="Write your solution here..." spellcheck="false">def twoSum(nums, target):
+                # Write your solution here
+                pass
+            </textarea>
             <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                <button type="submit" class="btn-modern btn-primary" style="flex: 1;">
-                    <i class="fas fa-paper-plane"></i> Submit Solution
+                <button id="submit-btn" type="submit" class="btn-modern btn-primary" style="flex: 1;">
+                    <i class="fas fa-paper-plane"></i>
+                    <span class="btn-text">Submit  Solution</span>
+                    <span class="spinner" style="display:none;"></span>
                 </button>
                 <button type="button" class="btn-modern btn-secondary" onclick="runTests()">
                     <i class="fas fa-play"></i> Run Tests
                 </button>
+                <!-- Result -->
+                <div id="submission-result"></div>
             </div>
         </form>
 
@@ -326,4 +330,7 @@
     }
 </script>
 
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'js/challenge_details.js' %}"></script>
 {% endblock %}

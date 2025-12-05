@@ -1,4 +1,5 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect,get_object_or_404
+from django.db.models import Count, Q
 from . import models
 import bcrypt
 
@@ -58,14 +59,23 @@ def dashboard(request):
 def classrooms_page(request):
     return render(request, 'classrooms.html')
 
-def classroom_detail(request, id):
+def classroom_detail(request):
     return render(request, 'classroom_details.html')
 
 def challenges_page(request):
-    return render(request, 'challenges.html')
+    challenges = models.Challenge.objects.annotate(
+        solved_count=Count('submissions', filter=Q(submissions__status='passed'), distinct=True)
+    )
+    return render(request, 'challenges.html', {'challenges': challenges})
 
-def challenge_detail(request):
-    return render(request, 'challenge_details.html')
+def challenge_detail(request,slug):
+    challenge = get_object_or_404(models.Challenge, slug=slug)
+    submissions = challenge.submissions.filter(user=request.user)
+    comments = challenge.comments.all().order_by('-created_at')
+    context={"challenge": challenge,
+            "submissions": submissions,
+            "comments": comments}
+    return render(request, 'challenge_details.html',context)
 
 def leaderboard_page(request):
     return render(request, 'leaderboard.html')

@@ -134,6 +134,10 @@ class Challenge(models.Model):
 
 
 class Submission(models.Model):
+    PENDING = "pending"
+    CORRECT = "correct"
+    WRONG = "wrong"
+
 
     STATUS_CHOICES = [
         ("pending", "Pending"),
