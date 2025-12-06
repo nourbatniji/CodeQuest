@@ -16,6 +16,7 @@ urlpatterns = [
 
     #urls for api_views
     path('api/classrooms/', api_views.classroom_list_api, name='api_classroom_list'),
+    path('api/classroom/<int:classroom_id>/', api_views.classroom_detail_api, name='api_classroom_detail'),
     path('api/challenge/<slug:slug>/submit/', api_views.submit_challenge_api, name='api_challenge_submit'),
 ]
 

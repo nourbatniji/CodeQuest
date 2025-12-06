@@ -59,8 +59,9 @@ def dashboard(request):
 def classrooms_page(request):
     return render(request, 'classrooms.html')
 
-def classroom_detail(request):
-    return render(request, 'classroom_details.html')
+def classroom_detail(request,classroom_id):
+    classroom = get_object_or_404(models.Classroom, id=classroom_id)
+    return render(request, 'classroom_details.html', {'classroom': classroom})
 
 def challenges_page(request):
     challenges = models.Challenge.objects.annotate(

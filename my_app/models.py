@@ -109,6 +109,12 @@ class ClassroomMembership(models.Model):
     joined_at = models.DateTimeField(auto_now_add=True)
 
 
+class Tag(models.Model):
+    name = models.CharField(max_length=50, unique=True)
+
+    def __str__(self):
+        return self.name
+    
 class Challenge(models.Model):
 
     DIFFICULTY_CHOICES = [
@@ -125,8 +131,12 @@ class Challenge(models.Model):
     output_description = models.TextField(blank=True)
     sample_input = models.TextField(blank=True)
     sample_output = models.TextField(blank=True)
+    example_explanation = models.TextField(blank=True)
+    constraints = models.TextField(blank=True, help_text="Write each constraint on a separate line.")
+    starter_code = models.TextField(blank=True)
+    hidden_tests = models.JSONField(blank=True, null=True) 
     difficulty = models.CharField(max_length=10, choices=DIFFICULTY_CHOICES, default='easy')
-    tags = models.CharField(max_length=255, blank=True)
+    tags = models.ManyToManyField(Tag, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

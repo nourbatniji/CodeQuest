@@ -1,9 +1,23 @@
 {% extends 'base.html' %}
-
+{% load static %}
 {% block title %}Classroom{% endblock %}
 
 {% block content %}
 <!-- Add your code in here -->
  <h1>Classroom Details</h1>
 
+ <h2 id="classroom-name"></h2>
+<p id="classroom-desc"></p>
+<p>Mentor: <span id="classroom-mentor"></span></p>
+
+<div id="classroom-stats">
+    <p>Members: <span id="members-count"></span></p>
+    <p>Challenges: <span id="challenges-count"></span></p>
+    <p>Comments: <span id="comments-count"></span></p>
+</div>
+<canvas id="statsChart" width="400" height="200"></canvas>
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{% static 'js/classroom_details.js' %}"></script>
 {% endblock %}

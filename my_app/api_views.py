@@ -61,3 +61,22 @@ def submit_challenge_api(request, slug):
         "status": submission.status
     })
 
+
+def classroom_detail_api(request, classroom_id):
+    classroom = get_object_or_404(Classroom, id=classroom_id)
+    members_count = classroom.memberships.count()
+    challenges_count = classroom.challenges.count()
+    comments_count = sum(c.comments.count() for c in classroom.challenges.all())
+
+    data = {
+        "id": classroom.id,
+        "name": classroom.name,
+        "description": classroom.description,
+        "mentor": classroom.mentor.username,
+        "stats": {
+            "members_count": members_count,
+            "challenges_count": challenges_count,
+            "comments_count": comments_count
+        }
+    }
+    return JsonResponse(data)
