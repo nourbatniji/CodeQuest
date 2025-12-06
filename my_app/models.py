@@ -1,8 +1,9 @@
 from django.db import models
-import bcrypt, re
+import re
 from django.utils import timezone
-from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model, authenticate
 from django.utils.text import slugify
+
 
 User = get_user_model()
 
@@ -15,6 +16,8 @@ pass_regex = re.compile(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\
 def is_exist(email):
     return User.objects.filter(email=email).exists()
 
+def is_username_exist(username):
+    return User.objects.filter(username=username)
 
 def validate_signup(postData):
     errors = {}
@@ -28,6 +31,9 @@ def validate_signup(postData):
     if not email_regex.match(postData['email']):
         errors['email_valid'] = 'Invalid Email format'
 
+    if is_username_exist(postData['username']):
+        errors['not_unique_name'] = 'Username already exists'
+
     if is_exist(postData['email']):
         errors['not_unique'] = 'Email already exists'
 
@@ -38,7 +44,6 @@ def validate_signup(postData):
         errors['matching_pw'] = 'Passwords do not match!'
 
     return errors
-
 
 def validate_login(postData):
     login_errors = {}
@@ -54,26 +59,33 @@ def validate_login(postData):
 
     return login_errors
 
-
 def create_user(postData):
-    hashed_pw = bcrypt.hashpw(postData['password'].encode(), bcrypt.gensalt()).decode()
-    user = User.objects.create(
+    user = User.objects.create_user(
         username=postData['username'],
         email=postData['email'],
-        password=hashed_pw
+        password=postData['password']
     )
     user.is_staff = False
     user.is_superuser = False
     user.save()
     return user  
 
+def authenticate_user(email, password): # gets the email to check the user pass
+    try:
+        user_obj = User.objects.get(email=email) #find user by email
+    except User.DoesNotExist:
+        return None
+    
+    user = authenticate(username=user_obj.username, password=password) #built-in django function=> reads hashed passwords from db, hash entered pass, compare them, if they match return user object,if not return None 
+    #authenticate checks if password is correct
+    return user
 
 def get_user_by_email(email):
     return User.objects.filter(email=email)
 
-
 def get_user_by_id(id):
     return User.objects.get(id=id)
+
 
 
 # ---------- CLASSROOM MODELS ----------
@@ -202,6 +214,17 @@ class UserBadge(models.Model):
         return f"{self.user} earned {self.badge}"
 
 
+class Profile(models.Model):
+    ROLE_CHOICES = [
+        ('student', 'Student'),
+        ('mentor', 'Mentor')
+    ]
+
+    user = models.OneToOneField(User, related_name='profile', on_delete=models.CASCADE)
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student')
+
+    def __str__(self):
+        return f"{self.user.username} ({self.role})"
 
 def check_user_badges(user):
     solved_count = user.submissions.filter(status="passed").values("challenge").distinct().count()
@@ -236,36 +259,7 @@ def create_initial_badges():
             value=b["value"],
             defaults={"description": b["desc"]}
         )
-#Challenge model
-class Challenge(models.Model):
 
-    DIFFICULTY_CHOICES = [
-        ("easy", "Easy"),
-        ("medium", "Medium"),
-        ("hard", "Hard"),
-    ]
-
-    title = models.CharField(max_length=150)
-    slug = models.SlugField(unique=True, blank=True)
-    description = models.TextField()
-
-    input_format = models.TextField(blank=True)
-    output_format = models.TextField(blank=True)
-    sample_io = models.TextField(blank=True)
-
-    difficulty = models.CharField(max_length=10, choices=DIFFICULTY_CHOICES, default='easy')
-    tags = models.CharField(max_length=255, blank=True)
-
-    classroom = models.ForeignKey(
-        Classroom,
-        on_delete=models.CASCADE,
-        related_name="challenges"
-    )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.title
 
 #Slug Auto-generation
 def save(self, *args, **kwargs):

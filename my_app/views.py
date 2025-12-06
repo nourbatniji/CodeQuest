@@ -1,11 +1,14 @@
 from django.shortcuts import render, redirect
 from . import models
-import bcrypt
 from .models import Classroom, ClassroomMembership
 from django.contrib import messages
 from django.shortcuts import get_object_or_404
 from django.db.models import Count
 from .models import Classroom, Challenge
+from .decorators import staff_or_superuser_required
+
+from django.contrib.auth import login as auth_login, logout as auth_logout
+
 
 def index(request):
     return render(request, 'index.html')
@@ -14,12 +17,13 @@ def index(request):
 def signup(request):
     if request.method == 'POST':
         errors = models.validate_signup(request.POST)
-        if errors:
+        if errors: #check data format
             return render(request, 'signup.html', {'errors': errors})
 
-        user = models.create_user(request.POST)
-        request.session['user_id'] = user.id
-        request.session['is_logged'] = True
+        user = models.create_user(request.POST) # create user
+
+        auth_login(request, user) # mark this user as logged in for this session
+
         return redirect('/dashboard')
 
     return render(request, 'signup.html')
@@ -29,62 +33,84 @@ def signup(request):
 def login(request):
     if request.method == 'POST':
         errors = models.validate_login(request.POST)
-        user = models.get_user_by_email(request.POST['email'])
 
-        if errors:
+        if errors: #check data format
             request.session['is_logged'] = False
             return render(request, 'login.html', {'errors': errors})
 
+        user = models.authenticate_user( # does this email & password match a real account?
+            request.POST['email'], 
+            request.POST['password']
+        )
+        
         if user:
-            logged_user = user[0]
-            if bcrypt.checkpw(request.POST['password'].encode(), logged_user.password.encode()):
-                request.session['user_id'] = logged_user.id
-                request.session['is_logged'] = True
-                return redirect('/dashboard')
-            else:
-                request.session['is_logged'] = False
-                errors['incorrect_pw'] = 'Incorrect Password'
-                return render(request, 'login.html', {'errors': errors})
+            auth_login(request, user) # mark this user as logged in for this session
+            return redirect('/dashboard')
 
-
+          
+        request.session['is_logged'] = False
+        errors['incorrect_pw'] = 'Incorrect Password'
         return render(request, 'login.html', {'errors': errors})
-
 
     return render(request, 'login.html')
 
 
 def signout(request):
+    auth_logout(request)
     request.session.flush()
     return redirect('/')
 
 def dashboard(request):
-    return render(request, 'dashboard.html')
+    if not request.user.is_authenticated:
+        return render(request, 'not_found.html')
+    context = {
+        'user' : request.user,
+        "user_classes_count" : request.user.user_joined_classes.count()
+    }
+    return render(request, 'dashboard.html', context)
 
 def classrooms_page(request):
+    if not request.user.is_authenticated:
+        return render(request, 'not_found.html')
     return render(request, 'classrooms.html')
 
 def classroom_detail(request, id):
+    if not request.user.is_authenticated:
+        return render(request, 'not_found.html')
     return render(request, 'classroom_details.html')
 
 def challenges_page(request):
+    if not request.user.is_authenticated:
+        return render(request, 'not_found.html')
     return render(request, 'challenges.html')
 
 def challenge_detail(request):
+    if not request.user.is_authenticated:
+        return render(request, 'not_found.html')
     return render(request, 'challenge_details.html')
 
 def leaderboard_page(request):
+    if not request.user.is_authenticated:
+        return render(request, 'not_found.html')
     return render(request, 'leaderboard.html')
 
 def profile_page(request):
+    if not request.user.is_authenticated:
+        return render(request, 'not_found.html')
     return render(request, 'profile.html')
 
+
+
+# wrapper runs before mentor-dashboard, is user logged?, is logged and superuser/staff? if yes run the next view
+@staff_or_superuser_required
 def mentor_dashboard(request):
+    if not request.user.is_authenticated:
+        return render(request, 'not_found.html')
     return render(request, 'mentor.html')
 
 def join_classroom(request, slug):
     if not request.user.is_authenticated:
-        messages.error(request, "You must log in to join a classroom.")
-        return redirect("login")
+        return render("not_found.html")
 
     classroom = get_object_or_404(Classroom, slug=slug)
 
@@ -103,9 +129,7 @@ def join_classroom(request, slug):
 
 def leave_classroom(request, slug):
     if not request.user.is_authenticated:
-        messages.error(request, "You must log in to leave a classroom.")
-        return redirect("login")
-
+        return render("not_found.html")
     classroom = get_object_or_404(Classroom, slug=slug)
 
     membership = ClassroomMembership.objects.filter(
@@ -122,7 +146,6 @@ def leave_classroom(request, slug):
     return redirect("dashboard")  # or wherever you want to redirect
 
 #Showing how many members for each classroom
-
 def classroom_list(request):
     classrooms = Classroom.objects.annotate(
         members=Count('memberships')
@@ -131,7 +154,6 @@ def classroom_list(request):
     return render(request, "classrooms/list.html", {"classrooms": classrooms})
 
 # Showing How many members in details 
-
 def classroom_detail(request, slug):
     classroom = Classroom.objects.annotate(
         members=Count('memberships')
@@ -139,13 +161,6 @@ def classroom_detail(request, slug):
 
     return render(request, "classrooms/detail.html", {"classroom": classroom})
 
-# showing how many classrooms did the user joined 
-def dashboard(request):
-    user_classes_count = request.user.user_joined_classes.count()
-
-    return render(request, "dashboard.html", {
-        "user_classes_count": user_classes_count
-    })
 
 #ordering classrooms based on how many members joined 
 def popular_classrooms(request):
@@ -158,7 +173,7 @@ def popular_classrooms(request):
     })
 
 #Implementing challenge-classroom assignment logic
-
+@staff_or_superuser_required
 def create_challenge(request, classroom_slug):
     classroom = get_object_or_404(Classroom, slug=classroom_slug)
 

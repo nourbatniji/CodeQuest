@@ -10,14 +10,19 @@
 {% block content %}
 <div class="auth-container">
     <div class="auth-card animate-fade-in">
-      
+
 
         <div class="auth-body">
             <!-- Error Messages -->
-            {% if error %}
+            {% if errors %}
             <div class="alert-modern alert-error">
-                <i class="fas fa-exclamation-circle"></i>
-                <span>{{ error }}</span>
+                {% for error, val in errors.items %}
+                <div>
+                    <i class="fas fa-exclamation-circle"></i>
+                    {{ val }}
+                </div>
+
+                {% endfor %}
             </div>
             {% endif %}
 
@@ -26,11 +31,11 @@
 
                 <div class="form-group">
                     <label class="form-label" for="username">
-                        <i class="fas fa-user"></i> Username or Email
+                        <i class="fas fa-user"></i> Email
                     </label>
                     <div class="input-group-modern">
-                        <input type="text" id="username" name="username" class="form-control-modern"
-                            placeholder="Enter your username" required autofocus>
+                        <input type="text" id="email" name="email" class="form-control-modern"
+                            placeholder="Enter your email" required autofocus>
                     </div>
                 </div>
 
@@ -46,7 +51,7 @@
                     </div>
                 </div>
 
-            
+
 
                 <button type="submit" class="btn-auth btn-auth-primary">
                     <i class="fas fa-sign-in-alt"></i> Log In
