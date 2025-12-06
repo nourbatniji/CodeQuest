@@ -4,7 +4,7 @@
   border: 2px solid rgba(0, 0, 0, 0.2);
   border-top-color: transparent;
   border-radius: 50%;
-  display: inline-block;
+  display: none;
   animation: spin 0.6s linear infinite;
   margin-left: 6px;
 }
@@ -28,3 +28,23 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.submission-code {
+    display: block;
+    visibility: hidden; 
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.4s ease;
+    background-color: #f5f5f5;
+    border-radius: 6px;
+    padding: 0 1rem;
+    margin-top: 0.5rem;
+}
+
+.submission-code.show {
+    max-height: 500px; /* أقصى ارتفاع عند التوسيع */
+    padding: 1rem;
+    overflow: auto; /* scroll إذا كان طويل */
+    visibility: visible;
+}
+

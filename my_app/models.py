@@ -132,7 +132,7 @@ class Challenge(models.Model):
     sample_input = models.TextField(blank=True)
     sample_output = models.TextField(blank=True)
     example_explanation = models.TextField(blank=True)
-    constraints = models.TextField(blank=True, help_text="Write each constraint on a separate line.")
+    constraints = models.TextField(blank=True)
     starter_code = models.TextField(blank=True)
     hidden_tests = models.JSONField(blank=True, null=True) 
     difficulty = models.CharField(max_length=10, choices=DIFFICULTY_CHOICES, default='easy')
@@ -147,7 +147,6 @@ class Submission(models.Model):
     PENDING = "pending"
     CORRECT = "correct"
     WRONG = "wrong"
-
 
     STATUS_CHOICES = [
         ("pending", "Pending"),

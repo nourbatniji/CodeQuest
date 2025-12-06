@@ -71,7 +71,7 @@ def challenges_page(request):
 
 def challenge_detail(request,slug):
     challenge = get_object_or_404(models.Challenge, slug=slug)
-    submissions = challenge.submissions.filter(user=request.user)
+    submissions = challenge.submissions.filter(user=request.user).order_by('-created_at')
     comments = challenge.comments.all().order_by('-created_at')
     context={"challenge": challenge,
             "submissions": submissions,
