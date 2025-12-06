@@ -1,4 +1,5 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect,get_object_or_404
+from django.db.models import Count, Q
 from . import models
 from .models import Classroom, ClassroomMembership
 from django.contrib import messages
@@ -74,20 +75,26 @@ def classrooms_page(request):
         return render(request, 'not_found.html')
     return render(request, 'classrooms.html')
 
-def classroom_detail(request, id):
-    if not request.user.is_authenticated:
-        return render(request, 'not_found.html')
-    return render(request, 'classroom_details.html')
+
 
 def challenges_page(request):
     if not request.user.is_authenticated:
         return render(request, 'not_found.html')
-    return render(request, 'challenges.html')
+    challenges = models.Challenge.objects.annotate(
+        solved_count=Count('submissions', filter=Q(submissions__status='passed'), distinct=True)
+    )
+    return render(request, 'challenges.html', {'challenges': challenges})
 
-def challenge_detail(request):
+def challenge_detail(request,slug):
     if not request.user.is_authenticated:
         return render(request, 'not_found.html')
-    return render(request, 'challenge_details.html')
+    challenge = get_object_or_404(models.Challenge, slug=slug)
+    submissions = challenge.submissions.filter(user=request.user).order_by('-created_at')
+    comments = challenge.comments.all().order_by('-created_at')
+    context={"challenge": challenge,
+            "submissions": submissions,
+            "comments": comments}
+    return render(request, 'challenge_details.html',context)
 
 def leaderboard_page(request):
     if not request.user.is_authenticated:
@@ -110,7 +117,7 @@ def mentor_dashboard(request):
 
 def join_classroom(request, slug):
     if not request.user.is_authenticated:
-        return render("not_found.html")
+        return render(request,"not_found.html")
 
     classroom = get_object_or_404(Classroom, slug=slug)
 
@@ -153,13 +160,27 @@ def classroom_list(request):
 
     return render(request, "classrooms/list.html", {"classrooms": classrooms})
 
-# Showing How many members in details 
-def classroom_detail(request, slug):
-    classroom = Classroom.objects.annotate(
-        members=Count('memberships')
-    ).get(slug=slug)
+#method to get classroom by id or slug
+def get_classroom(id=None, slug=None):
+    queryset = Classroom.objects.annotate(members=Count('memberships'))  
+    if id is not None:
+        return get_object_or_404(queryset, id=id)
+    elif slug is not None:
+        return get_object_or_404(queryset, slug=slug)
+    else:
+        raise ValueError("You must provide either an id or a slug")
+    
+# Showing How many members in details
+def classroom_detail(request, slug=None, classroom_id=None):
+    if not request.user.is_authenticated:
+        return render(request, 'not_found.html')
+    classroom = get_classroom(id=classroom_id, slug=slug)
+    return render(request, "classrooms/detail.html", {"classroom": classroom}) 
 
-    return render(request, "classrooms/detail.html", {"classroom": classroom})
+def classroom_detail(request,classroom_id):
+    
+    classroom = get_object_or_404(models.Classroom, id=classroom_id)
+    return render(request, 'classroom_details.html', {'classroom': classroom})
 
 
 #ordering classrooms based on how many members joined 
@@ -189,9 +210,9 @@ def create_challenge(request, classroom_slug):
             difficulty=request.POST["difficulty"],
             tags=request.POST.get("tags", ""),
             classroom=classroom,
-            input_format=request.POST.get("input_format", ""),
-            output_format=request.POST.get("output_format", ""),
-            sample_io=request.POST.get("sample_io", "")
+            input_description=request.POST.get("input_format", ""),
+            output_desciption=request.POST.get("output_format", ""),
+            sample_input=request.POST.get("sample_io", "")
         )
         messages.success(request, "Challenge created successfully!")
         return redirect("classroom_detail", slug=classroom_slug)

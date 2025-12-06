@@ -52,35 +52,35 @@
         </div>
     </div>
 </div>
-
+{% for challenge in challenges %}
 <!-- Challenges List -->
 <div class="challenge-list animate-fade-in">
     <!-- Challenge 1 -->
-    <div class="challenge-item" onclick="window.location.href='/challenge/1'">
+    <div class="challenge-item" onclick="window.location.href='/challenge/{{challenge.slug}}/'">
         <div class="challenge-info">
-            <div class="challenge-title">Two Sum Problem</div>
+            <div class="challenge-title">{{challenge.title}}</div>
             <div class="challenge-meta">
                 <span class="badge-modern badge-easy">
-                    <i class="fas fa-circle"></i> Easy
+                    <i class="fas fa-circle"></i> {{challenge.difficulty}}
                 </span>
                 <span style="color: var(--text-secondary); font-size: 0.875rem;">
-                    <i class="fas fa-folder"></i> Python Fundamentals
+                    <i class="fas fa-folder"></i> {{challenge.classroom.name}}
                 </span>
                 <span style="color: var(--text-secondary); font-size: 0.875rem;">
-                    <i class="fas fa-tags"></i> Arrays, Hash Table
+                    <i class="fas fa-tags"></i> {{challenge.tags}}
                 </span>
             </div>
         </div>
         <div class="challenge-actions">
             <span style="color: var(--text-secondary); font-size: 0.875rem;">
-                <i class="fas fa-users"></i> 234 solved
+                <i class="fas fa-users"></i> {{challenge.solved_count}}
             </span>
             <button class="btn-modern btn-primary">
                 <i class="fas fa-play"></i> Start
             </button>
         </div>
     </div>
-
+{% endfor %}
     <!-- Challenge 2 -->
     <div class="challenge-item" onclick="window.location.href='/challenge/2'">
         <div class="challenge-info">
