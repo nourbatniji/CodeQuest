@@ -4,6 +4,8 @@ import json
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.views.decorators.http import require_POST
+from django.core.paginator import Paginator
+
 
 #api_view for classroom list
 def classroom_list_api(request):
@@ -131,3 +133,30 @@ def add_comment_api(request, slug):
 
     return JsonResponse({"message": "Comment added.", "comment": comment_dict})
 
+#Build comment listing with pagination
+def comments_list_api(request, challenge_slug):
+    page = int(request.GET.get("page", 1))
+    page_size = 5  # Number of comments on the page
+
+    comments = Comment.objects.filter(challenge__slug=challenge_slug).order_by("-created_at")
+
+    paginator = Paginator(comments, page_size)
+    page_obj = paginator.get_page(page)
+
+    data = {
+        "comments": [
+            {
+                "id": c.id,
+                "user": c.user.username,
+                "content": c.content,
+                "created_at": c.created_at.strftime("%Y-%m-%d %H:%M"),
+            }
+            for c in page_obj
+        ],
+        "has_next": page_obj.has_next(),
+        "has_previous": page_obj.has_previous(),
+        "page": page_obj.number,
+        "total_pages": paginator.num_pages,
+    }
+
+    return JsonResponse(data)

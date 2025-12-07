@@ -255,35 +255,20 @@
         </form>
     </div>
 </div>
-    <!-- Comments List -->
-     <div id="comment-list">
-         {% for comment in comments %}
-             <div class="comment-box comments-list" data-id="{{ comment.id }}">
-            <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem;">
-                <div class="user-avatar"
-                    style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary-500), var(--primary-700)); border-radius: 50%;">
-                </div>
-                <div style="flex: 1;">
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
-                        <div>
-                            <strong style="color: var(--text-primary);">{{comment.user.username}}</strong>
-                            <span style="color: var(--text-tertiary); font-size: 0.875rem; margin-left: 0.5rem;">
-                                <i class="fas fa-clock"></i> {{comment.created_at}}
-                            </span>
-                        </div>
-                    </div>
-                    <p style="color: var(--text-secondary); margin: 0;">
-                        {{comment.content}}
-                    </p>
-                </div>
-            </div>
-             </div>
-             {% empty %}
-             <div id="no-comments" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-                    No comments yet
-             </div>
-             {% endfor %}
-     </div>
+
+<!-- Comments List -->
+ 
+ <div id="comment-list">
+    <h3>Comments</h3>
+        <!-- Container where AJAX will inject comments -->
+        <div id="comments-container" class="comments-list"></div>
+        <!-- Pagination Controls -->
+    <div id="pagination-controls" style="margin-top: 1rem;">
+        <button id="prev-page" class="btn-modern btn-secondary" disabled>Previous</button>
+        <button id="next-page" class="btn-modern btn-secondary" disabled>Next</button>
+    </div>
+</div>
+
 
 <!-- Hidden Tests Data -->
 {{ challenge.hidden_tests|json_script:"hidden-tests-data" }}
