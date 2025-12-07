@@ -46,7 +46,10 @@ def login(request):
         
         if user:
             auth_login(request, user) # mark this user as logged in for this session
-            return redirect('/dashboard')
+            if user.is_staff:
+                return redirect('/mentor_dashboard')
+            else:
+                return redirect('/dashboard')
 
           
         request.session['is_logged'] = False
@@ -105,8 +108,6 @@ def profile_page(request):
     if not request.user.is_authenticated:
         return render(request, 'not_found.html')
     return render(request, 'profile.html')
-
-
 
 # wrapper runs before mentor-dashboard, is user logged?, is logged and superuser/staff? if yes run the next view
 @staff_or_superuser_required
