@@ -308,3 +308,53 @@ document.getElementById('submission-list').addEventListener('click', (e) => {
         Prism.highlightElement(codeBlock.querySelector('code'));
     }
 });
+
+
+//ajax for comments pagination
+document.addEventListener("DOMContentLoaded", function () {
+    const commentsContainer = document.getElementById("comments-container");
+    const prevBtn = document.getElementById("prev-page");
+    const nextBtn = document.getElementById("next-page");
+
+    const challengeSlug = document.getElementById("challenge-data").dataset.slug;
+
+    let currentPage = 1;
+
+    async function loadComments(page = 1) {
+        const response = await fetch(`/api/challenge/${challengeSlug}/comments/?page=${page}`);
+        const data = await response.json();
+
+        commentsContainer.innerHTML = "";
+
+        if (data.comments.length === 0) {
+            commentsContainer.innerHTML = `<p>No comments yet.</p>`;
+            return;
+        }
+
+        data.comments.forEach(c => {
+            commentsContainer.innerHTML += `
+                <div class="comment-box" style="padding:1rem; background:#f3f4f6; margin-bottom:0.5rem; border-radius:8px;">
+                    <strong>${c.user}</strong> · <small>${c.created_at}</small>
+                    <p style="margin:0.5rem 0;">${c.content}</p>
+                </div>
+            `;
+        });
+
+        prevBtn.disabled = !data.has_previous;
+        nextBtn.disabled = !data.has_next;
+
+        currentPage = data.page;
+    }
+
+    // Pagination button actions
+    prevBtn.addEventListener("click", () => {
+        if (currentPage > 1) loadComments(currentPage - 1);
+    });
+
+    nextBtn.addEventListener("click", () => {
+        loadComments(currentPage + 1);
+    });
+
+    // Load first page
+    loadComments();
+});
