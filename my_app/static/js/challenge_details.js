@@ -94,7 +94,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
 
 //using Judge0 CE API 
-//using Judge0 CE API 
 async function runCode(stdin = "") {
     const code = document.getElementById("code-editor").value;
     const language = document.querySelector("select.filter-select").value;
@@ -252,7 +251,7 @@ document.getElementById('comment-form').addEventListener('submit', async functio
     const data = await response.json();
 
     if (response.ok) {
-        // إضافة التعليق الجديد للـ DOM بدون reload
+        // Add new DOM comment without reload
         const commentsList = document.querySelector('.comments-list');
         const div = document.createElement('div');
         div.classList.add('comment-box');
@@ -283,9 +282,10 @@ document.getElementById('comment-form').addEventListener('submit', async functio
     }
 });
 
+//script for view/hide Code
 document.getElementById('submission-list').addEventListener('click', (e) => {
     const button = e.target.closest('.view-code-btn');
-    if (!button) return; // إذا ما كان الزر لم نضغط على شيء آخر
+    if (!button) return; // إIf the button is not pressed, we will not press anything else
 
     const submissionItem = button.closest('.submission-item');
     const codeBlock = submissionItem.querySelector('.submission-code');
@@ -332,14 +332,29 @@ document.addEventListener("DOMContentLoaded", function () {
         }
 
         data.comments.forEach(c => {
-            commentsContainer.innerHTML += `
-                <div class="comment-box" style="padding:1rem; background:#f3f4f6; margin-bottom:0.5rem; border-radius:8px;">
-                    <strong>${c.user}</strong> · <small>${c.created_at}</small>
-                    <p style="margin:0.5rem 0;">${c.content}</p>
+            commentsContainer.innerHTML +=`
+            <div class="comment-box">
+                <div style="display: flex; gap: 1rem; margin-bottom: 0.75rem;">
+                    <div class="user-avatar"
+                        style="width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary-500), var(--primary-700)); border-radius: 50%;">
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                            <div>
+                                <strong style="color: var(--text-primary);">${c.user}</strong>
+                                <span style="color: var(--text-tertiary); font-size: 0.875rem; margin-left:0.5rem;">
+                                    <i class="fas fa-clock"></i> ${c.created_at}
+                                </span>
+                            </div>
+                        </div>
+                        <p style="color: var(--text-secondary); margin: 0;">
+                            ${c.content}
+                        </p>
+                    </div>
                 </div>
-            `;
+            </div>
+        `;
         });
-
         prevBtn.disabled = !data.has_previous;
         nextBtn.disabled = !data.has_next;
 
