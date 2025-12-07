@@ -33,84 +33,53 @@
     </div>
 </div>
 
+
 <!-- Classrooms Grid -->
 <div class="classroom-grid animate-fade-in">
-    <!-- Classroom Card 1 -->
+    {% for c in classrooms %}
     <div class="classroom-card">
         <div class="classroom-card-header">
-            <h3>Python Fundamentals</h3>
-            <p>Master the basics of Python programming</p>
+            <h3>{{ c.name }}</h3>
+            <p>{{ c.description|default:"No description yet." }}</p>
         </div>
         <div class="classroom-card-body">
             <div class="classroom-meta">
                 <div class="classroom-meta-item">
                     <i class="fas fa-user-tie"></i>
-                    <span>Prof. Johnson</span>
+                    <span>{{ c.mentor.username }}</span>
                 </div>
                 <div class="classroom-meta-item">
                     <i class="fas fa-users"></i>
-                    <span>45 members</span>
+                    <span>{{ c.members_count }} members</span>
                 </div>
             </div>
             <div class="classroom-meta">
                 <div class="classroom-meta-item">
                     <i class="fas fa-code"></i>
-                    <span>12 challenges</span>
+                    <span>{{ c.challenges.count }} challenges</span>
                 </div>
                 <div class="classroom-meta-item">
-                    <i class="fas fa-signal"></i>
-                    <span>Beginner</span>
+                    <i class="fas fa-clock"></i>
+                    <span>Created {{ c.created_at|date:"M d, Y" }}</span>
                 </div>
             </div>
         </div>
         <div class="classroom-card-footer">
             <span style="font-size: 0.875rem; color: var(--text-secondary);">
-                <i class="fas fa-clock"></i> Updated 2 days ago
+                <i class="fas fa-clock"></i>
+                Updated {{ c.created_at|date:"M d, Y" }}
             </span>
-            <button class="btn-modern btn-primary" onclick="window.location.href='/classroom/1'">
-                <i class="fas fa-arrow-right"></i> View
-            </button>
+            <a href="{% url 'classroom_detail' slug=c.slug %}">
+                <button class="btn-modern btn-primary">
+                    <i class="fas fa-arrow-right"></i> View
+                </button>
+            </a>
         </div>
     </div>
-
-    <!-- Classroom Card 2 -->
-    <div class="classroom-card">
-        <div class="classroom-card-header">
-            <h3>Data Structures & Algorithms</h3>
-            <p>Learn essential DSA concepts</p>
-        </div>
-        <div class="classroom-card-body">
-            <div class="classroom-meta">
-                <div class="classroom-meta-item">
-                    <i class="fas fa-user-tie"></i>
-                    <span>Dr. Smith</span>
-                </div>
-                <div class="classroom-meta-item">
-                    <i class="fas fa-users"></i>
-                    <span>38 members</span>
-                </div>
-            </div>
-            <div class="classroom-meta">
-                <div class="classroom-meta-item">
-                    <i class="fas fa-code"></i>
-                    <span>20 challenges</span>
-                </div>
-                <div class="classroom-meta-item">
-                    <i class="fas fa-signal"></i>
-                    <span>Intermediate</span>
-                </div>
-            </div>
-        </div>
-        <div class="classroom-card-footer">
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">
-                <i class="fas fa-clock"></i> Updated 1 week ago
-            </span>
-            <button class="btn-modern btn-primary" onclick="window.location.href='/classroom/2'">
-                <i class="fas fa-arrow-right"></i> View
-            </button>
-        </div>
-    </div>
-
+    {% empty %}
+        <p>No classrooms yet. Ask a mentor to create one in the admin.</p>
+    {% endfor %}
 </div>
+
 
 {% endblock %}

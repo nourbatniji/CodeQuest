@@ -92,7 +92,7 @@ def get_user_by_id(id):
 
 class Classroom(models.Model):
     name = models.CharField(max_length=45)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, blank=True)
     description = models.TextField(null=True, blank=True)
     mentor = models.ForeignKey(
         User,
@@ -100,6 +100,12 @@ class Classroom(models.Model):
         on_delete=models.CASCADE
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    def save(self, *args, **kwargs):
+        # Auto-generate slug the first time, based on name
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
+
 
     def member_count(self):
         return self.memberships.count()
@@ -157,26 +163,30 @@ class Challenge(models.Model):
 
 
 class Submission(models.Model):
-    PENDING = "pending"
-    CORRECT = "correct"
-    WRONG = "wrong"
-
     STATUS_CHOICES = [
         ("pending", "Pending"),
         ("passed", "Passed"),
         ("failed", "Failed"),
     ]
 
-    PYTHON = "python"
     LANGUAGE_CHOICES = [
-        (PYTHON, "Python"),
+        ("python", "Python"),
+        ("javascript", "JavaScript"),
+        ("java", "Java"),
+        ("cpp", "C++"),
+        ("c", "C"),
+        ("ruby", "Ruby"),
+        ("go", "Go"),
+        ("php", "PHP"),
+        ("swift", "Swift"),
+        ("kotlin", "Kotlin")
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="submissions")
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE, related_name="submissions")
     code = models.TextField()
-    language = models.CharField(max_length=20, choices=LANGUAGE_CHOICES, default=PYTHON)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
+    language = models.CharField(max_length=20, choices=LANGUAGE_CHOICES, default='python')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     points_awarded = models.IntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
