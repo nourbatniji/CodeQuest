@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
-{% block title %}Classroom Details{% endblock %}
+{% block title %}Classroom Details - {{ classroom.name }}{% endblock %}
 
 {% block content %}
 <style>
@@ -8,29 +8,65 @@
         max-height: 100px; /* Adjust as needed for smaller charts */
     }
 </style>
+
 <div class="container mt-4">
     <div class="row">
-        <div class="col-md-12">
-            <h1 class="mb-4 text-center">Classroom Details</h1>
+        <div class="col-md-12 d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="mb-1">Classroom: {{ classroom.name }}</h1>
+                <p class="text-muted mb-0">
+                    Mentor: <strong>{{ classroom.mentor.username }}</strong>
+                </p>
+            </div>
+
+            <!-- Join / Leave buttons -->
+            <div>
+                {% if is_member %}
+                    <form method="post" action="{% url 'leave_classroom' slug=classroom.slug %}">
+                        {% csrf_token %}
+                        <button class="btn btn-outline-danger">
+                            <i class="fas fa-door-open"></i> Leave classroom
+                        </button>
+                    </form>
+                {% else %}
+                    <form method="post" action="{% url 'join_classroom' slug=classroom.slug %}">
+                        {% csrf_token %}
+                        <button class="btn btn-primary">
+                            <i class="fas fa-door-closed"></i> Join classroom
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
         </div>
     </div>
 
+    <hr class="my-3">
+
     <div class="row">
+        <!-- Left: info + charts -->
         <div class="col-md-8">
+            <!-- Basic info card -->
             <div class="card mb-4 shadow-sm">
                 <div class="card-body">
-                    <h2 class="card-title" id="classroom-name"></h2>
-                    <p class="card-text" id="classroom-desc"></p>
-                    <p class="card-text"><strong>Mentor:</strong> <span id="classroom-mentor"></span></p>
+                    <h4 class="card-title mb-2">About this classroom</h4>
+                    <p class="card-text">
+                        {{ classroom.description|default:"No description added yet." }}
+                    </p>
+                    <p class="card-text mb-0">
+                        <strong>Created at:</strong>
+                        {{ classroom.created_at|date:"M d, Y" }}
+                    </p>
                 </div>
             </div>
 
+            <!-- KPIs / Charts (you can hook real data later) -->
             <div class="card mb-4 shadow-sm">
                 <div class="card-header">
                     <h5 class="mb-0">Key Performance Indicators</h5>
                 </div>
                 <div class="card-body">
                     <div class="row">
+                        <!-- Challenge completion rate -->
                         <div class="col-md-6 mb-3">
                             <div class="card h-100 bg-light">
                                 <div class="card-body">
@@ -39,6 +75,8 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Average score -->
                         <div class="col-md-6 mb-3">
                             <div class="card h-100 bg-light">
                                 <div class="card-body">
@@ -47,6 +85,8 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Activity trend -->
                         <div class="col-md-12">
                             <div class="card h-100 bg-light">
                                 <div class="card-body">
@@ -60,8 +100,9 @@
             </div>
         </div>
 
+        <!-- Right: stats -->
         <div class="col-md-4">
-            <div class="card shadow-sm">
+            <div class="card shadow-sm mb-4">
                 <div class="card-header">
                     <h5 class="mb-0">Classroom Statistics</h5>
                 </div>
@@ -69,23 +110,33 @@
                     <ul class="list-group list-group-flush">
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             Members
-                            <span class="badge bg-primary rounded-pill" id="members-count"></span>
+                            <span class="badge bg-primary rounded-pill">
+                                {{ classroom.memberships.count }}
+                            </span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             Challenges
-                            <span class="badge bg-success rounded-pill" id="challenges-count"></span>
+                            <span class="badge bg-success rounded-pill">
+                                {{ challenges_count }}
+                            </span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             Comments
-                            <span class="badge bg-info rounded-pill" id="comments-count"></span>
+                            <span class="badge bg-info rounded-pill">
+                                0
+                            </span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             Average Challenge Time
-                            <span class="badge bg-secondary rounded-pill" id="avg-challenge-time"></span>
+                            <span class="badge bg-secondary rounded-pill">
+                                N/A
+                            </span>
                         </li>
                     </ul>
                 </div>
             </div>
+
+            <!-- You can later add a "Recent challenges" list here -->
         </div>
     </div>
 </div>
@@ -94,5 +145,4 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{% static 'js/classroom_details.js' %}"></script>
-
 {% endblock %}
