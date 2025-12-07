@@ -1,11 +1,14 @@
 from django.urls import path
 from . import views,api_views
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
     path('', views.index),
+    # Authentication
     path('login/', views.login),
     path('signup/', views.signup),
     path('signout/', views.signout),
+    
     path('dashboard/', views.dashboard),
     path('classrooms/', views.classrooms_page),
     path('classroom/<int:classroom_id>/', views.classroom_detail),

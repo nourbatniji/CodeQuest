@@ -37,22 +37,31 @@
             <div class="collapse navbar-collapse" id="navMenu">
                 <ul class="navbar-nav ms-auto align-items-center">
 
-
+                    {% if user.is_authenticated %}
+                    <!-- Student -->
+                    {% if not user.is_staff %}
                     <li class="nav-item">
                         <a class="nav-link" href="/dashboard/">
-                             Home
+                            Dashboard
                         </a>
                     </li>
+                    <!-- Mentor -->
+                    {% elif user.is_staff %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/mentor-dashboard/">Dashboard</a>
+                    </li>
+                    {% endif %}
+
 
                     <li class="nav-item">
                         <a class="nav-link" href="/classrooms/">
-                       Classrooms
+                            Classrooms
                         </a>
                     </li>
 
                     <li class="nav-item">
                         <a class="nav-link" href="/challenges/">
-                      Challenges
+                            Challenges
                         </a>
                     </li>
 
@@ -60,13 +69,6 @@
                         <a class="nav-link" href="/leaderboard/">Leaderboard</a>
                     </li>
 
-                    {% if user.is_staff %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="/mentor-dashboard/">Mentor Dashboard</a>
-                    </li>
-                    {% endif %}
-
-                    {% if user.is_authenticated %}
                     <li class="nav-item">
                         <a class="nav-link" href="/profile/">Profile</a>
                     </li>
