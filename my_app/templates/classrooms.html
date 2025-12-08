@@ -40,12 +40,6 @@
 
 
 
-
-
-{% endblock %}
-{% block scripts %}
-{% load static %}
-<script src="{% static 'js/classrooms.js' %}"></script>
 <div class="classroom-grid animate-fade-in">
     {% for c in classrooms %}
     <div class="classroom-card">
@@ -91,7 +85,9 @@
         <p>No classrooms yet. Ask a mentor to create one in the admin.</p>
     {% endfor %}
 </div>
+{% endblock %}
 
 
->>>>>>> 7b47caf5b20c518c396e46cc86c3708f81bd969e
+{% block scripts %}
+<script src="{% static 'js/classrooms.js' %}"></script>
 {% endblock %}
