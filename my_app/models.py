@@ -92,7 +92,7 @@ def get_user_by_id(id):
 
 class Classroom(models.Model):
     name = models.CharField(max_length=45)
-    slug = models.SlugField(unique=True)
+    slug = models.SlugField(unique=True, blank=True)  # مهم جداً blank=True
     description = models.TextField(null=True, blank=True)
     mentor = models.ForeignKey(
         User,
@@ -100,6 +100,22 @@ class Classroom(models.Model):
         on_delete=models.CASCADE
     )
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        # إذا السلق غير موجود → توليده تلقائياً
+        if not self.slug:
+            base_slug = slugify(self.name)
+            slug = base_slug
+            counter = 1
+
+            # حل نهائي لمنع أي تكرار مستقبلي
+            while Classroom.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+
+            self.slug = slug
+
+        super().save(*args, **kwargs)
 
     def member_count(self):
         return self.memberships.count()
@@ -121,6 +137,8 @@ class ClassroomMembership(models.Model):
     )
     joined_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"{self.user} -> {self.classroom}"
 
 class Tag(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -279,4 +297,3 @@ def save(self, *args, **kwargs):
     if not self.slug:
         self.slug = slugify(self.title)
     super().save(*args, **kwargs)
-
