@@ -30,7 +30,7 @@ function updateHomeClassroomsUI(classrooms) {
         const description = c.description ?? "No description available";
         const mentor = c.mentor ?? "Unknown Mentor";
         const members = c.members_count ?? 0;
-        const challenges = c.total_challenges ?? 0;
+        const challenges = c.challenges_count ?? 0;
         const level = c.level ?? "Beginner";
         const updated = c.updated_at ?? "N/A";
         const classroomId = c.id ?? "#";

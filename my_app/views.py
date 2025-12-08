@@ -1,13 +1,9 @@
 from django.shortcuts import render, redirect,get_object_or_404
-from django.db.models import Count, Q
 from . import models
-from .models import Classroom, ClassroomMembership
+from .models import Classroom, ClassroomMembership, Challenge
 from django.contrib import messages
-from django.shortcuts import get_object_or_404
-from django.db.models import Count
-from .models import Classroom, Challenge
+from django.db.models import Count, Q
 from .decorators import staff_or_superuser_required
-
 from django.contrib.auth import login as auth_login, logout as auth_logout
 
 
@@ -29,7 +25,6 @@ def signup(request):
 
     return render(request, 'signup.html')
 
-
 #  LOGIN 
 def login(request):
     if request.method == 'POST':
@@ -46,7 +41,10 @@ def login(request):
         
         if user:
             auth_login(request, user) # mark this user as logged in for this session
-            return redirect('/dashboard')
+            if user.is_staff:
+                return redirect('/mentor_dashboard')
+            else:
+                return redirect('/dashboard')
 
           
         request.session['is_logged'] = False
@@ -54,7 +52,6 @@ def login(request):
         return render(request, 'login.html', {'errors': errors})
 
     return render(request, 'login.html')
-
 
 def signout(request):
     auth_logout(request)
@@ -69,13 +66,6 @@ def dashboard(request):
         "user_classes_count" : request.user.user_joined_classes.count()
     }
     return render(request, 'dashboard.html', context)
-
-def classrooms_page(request):
-    if not request.user.is_authenticated:
-        return render(request, 'not_found.html')
-    return render(request, 'classrooms.html')
-
-
 
 def challenges_page(request):
     if not request.user.is_authenticated:
@@ -106,14 +96,41 @@ def profile_page(request):
         return render(request, 'not_found.html')
     return render(request, 'profile.html')
 
-
-
 # wrapper runs before mentor-dashboard, is user logged?, is logged and superuser/staff? if yes run the next view
 @staff_or_superuser_required
 def mentor_dashboard(request):
     if not request.user.is_authenticated:
         return render(request, 'not_found.html')
     return render(request, 'mentor.html')
+
+
+def classrooms_page(request):
+    if not request.user.is_authenticated:
+        return render(request, 'not_found.html')
+    
+    classrooms = Classroom.objects.annotate(
+        members_count=Count('memberships')
+    )
+    return render(request, 'classrooms.html', {'classrooms': classrooms})
+
+
+def classroom_detail(request, slug=None):
+    if not request.user.is_authenticated:
+        return render(request, 'not_found.html')
+    
+    classroom = get_object_or_404(Classroom.objects.annotate(members_count=Count('memberships')), slug=slug)
+
+    is_member = ClassroomMembership.objects.filter(user=request.user, classroom=classroom).exists()
+
+    challenges_count = classroom.challenges.count() if hasattr(classroom, "challenges") else 0
+
+    context = {
+        "classroom": classroom,
+        "is_member": is_member,
+        "challenges_count": challenges_count,
+    }
+    return render(request, "classroom_details.html", context) 
+
 
 def join_classroom(request, slug):
     if not request.user.is_authenticated:
@@ -136,7 +153,8 @@ def join_classroom(request, slug):
 
 def leave_classroom(request, slug):
     if not request.user.is_authenticated:
-        return render("not_found.html")
+        return render(request, "not_found.html")
+    
     classroom = get_object_or_404(Classroom, slug=slug)
 
     membership = ClassroomMembership.objects.filter(
@@ -150,48 +168,8 @@ def leave_classroom(request, slug):
     else:
         messages.info(request, "You are not a member of this classroom.")
 
-    return redirect("dashboard")  # or wherever you want to redirect
+    return redirect("classrooms_page")  
 
-#Showing how many members for each classroom
-def classroom_list(request):
-    classrooms = Classroom.objects.annotate(
-        members=Count('memberships')
-    )
-
-    return render(request, "classrooms/list.html", {"classrooms": classrooms})
-
-#method to get classroom by id or slug
-def get_classroom(id=None, slug=None):
-    queryset = Classroom.objects.annotate(members=Count('memberships'))  
-    if id is not None:
-        return get_object_or_404(queryset, id=id)
-    elif slug is not None:
-        return get_object_or_404(queryset, slug=slug)
-    else:
-        raise ValueError("You must provide either an id or a slug")
-    
-# Showing How many members in details
-def classroom_detail(request, slug=None, classroom_id=None):
-    if not request.user.is_authenticated:
-        return render(request, 'not_found.html')
-    classroom = get_classroom(id=classroom_id, slug=slug)
-    return render(request, "classrooms/detail.html", {"classroom": classroom}) 
-
-def classroom_detail(request,classroom_id):
-    
-    classroom = get_object_or_404(models.Classroom, id=classroom_id)
-    return render(request, 'classroom_details.html', {'classroom': classroom})
-
-
-#ordering classrooms based on how many members joined 
-def popular_classrooms(request):
-    popular_classes = Classroom.objects.annotate(
-        members=Count('memberships')
-    ).order_by('-members')
-
-    return render(request, "classrooms/popular.html", {
-        "popular_classes": popular_classes
-    })
 
 #Implementing challenge-classroom assignment logic
 @staff_or_superuser_required

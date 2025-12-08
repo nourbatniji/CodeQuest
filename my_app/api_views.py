@@ -1,9 +1,8 @@
 from django.http import JsonResponse
-from .models import User, Classroom,Challenge, Submission,Comment,ClassroomMembership,Badge
+from .models import Classroom, Challenge, Submission, Comment, Badge, UserBadge, check_user_badges,ClassroomMembership
 import json
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from django.views.decorators.http import require_POST
 from django.core.paginator import Paginator
 from django.db.models import Count, Sum, Case, When, IntegerField, Value, F,Q
 from django.db.models.functions import Coalesce
@@ -62,31 +61,30 @@ def user_classrooms_api(request):
     return JsonResponse({"classrooms": data})
 
 #api_view for classroom list
+# -----------------------
+# Classroom List API
+# -----------------------
 def classroom_list_api(request):
-    """
-    API to return all rows in JSON format
-    GET /api/classrooms/
-    """
     classrooms = Classroom.objects.all()
-    data = []
-    for c in classrooms:
-        data.append({
+    data = [
+        {
             "id": c.id,
             "name": c.name,
             "slug": c.slug,
             "description": c.description,
             "mentor": c.mentor.username,
             "created_at": c.created_at.strftime("%Y-%m-%d %H:%M:%S")
-        })
+        }
+        for c in classrooms
+    ]
     return JsonResponse({"classrooms": data})
 
 
 #api_view for dynamic challenge_detail page
+# -----------------------
+# Submit Challenge API
+# -----------------------
 def submit_challenge_api(request, slug):
-    """
-    POST /api/challenge/<slug>/submit/
-    Body JSON: { "code": "...", "language": "python" }
-    """
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Authentication required."}, status=401)
 
@@ -97,24 +95,58 @@ def submit_challenge_api(request, slug):
 
     try:
         data = json.loads(request.body)
-        code = data.get("code", "")
+        code = data.get("code", "").strip()
         language = data.get("language", "python")
-        status = data.get("status", "pending")
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON."}, status=400)
 
     if not code:
         return JsonResponse({"error": "Code is required."}, status=400)
 
+    # إنشاء submission
     submission = Submission.objects.create(
         user=request.user,
         challenge=challenge,
         code=code,
         language=language,
-        status=status 
+        status="pending",
+        points_awarded=0
     )
-    def submission_to_dict(submission):
-        return {
+
+    # تقييم الحل (منطق مؤقت للتحقق من الإجابة)
+    is_correct = False
+    if challenge.hidden_tests and "return" in code:
+        is_correct = True
+
+    # تحديد النقاط حسب الصعوبة
+    difficulty_points = {"Easy": 10, "Medium": 20, "Hard": 30}
+    points_awarded = difficulty_points.get(challenge.difficulty, 10) if is_correct else 0
+
+    # تحديث حالة الـSubmission
+    submission.status = "passed" if is_correct else "failed"
+    submission.points_awarded = points_awarded
+    submission.save()
+
+    # تحديث نقاط المستخدم والمستوى والبادجات عند النجاح
+    if is_correct:
+        profile = getattr(request.user, "profile", None)
+        if profile:
+            profile.points += points_awarded
+
+            # حساب المستوى
+            if profile.points < 50:
+                profile.level = "Beginner"
+            elif profile.points < 150:
+                profile.level = "Intermediate"
+            else:
+                profile.level = "Advanced"
+
+            profile.save()
+
+        check_user_badges(request.user)
+
+    return JsonResponse({
+        "submission": {
             "message": "Submission received.",
             "id": submission.id,
             "user": submission.user.id,
@@ -122,13 +154,16 @@ def submit_challenge_api(request, slug):
             "code": submission.code,
             "language": submission.language,
             "status": submission.status,
+            "points_awarded": submission.points_awarded,
+            "user_level": getattr(request.user.profile, "level", "Beginner") if is_correct else None,
             "created_at": submission.created_at.isoformat(),
         }
-    return JsonResponse({
-        "submission":submission_to_dict(submission)
     })
 
-#api_view for dynamic classroom_detail page
+
+# -----------------------
+# Classroom Detail API
+# -----------------------
 def classroom_detail_api(request, classroom_id):
     classroom = get_object_or_404(Classroom, id=classroom_id)
     members_count = classroom.memberships.count()
@@ -148,12 +183,11 @@ def classroom_detail_api(request, classroom_id):
     }
     return JsonResponse(data)
 
-#api_view for adding comment dynamically in challenge_detail page
+
+# -----------------------
+# Add Comment API
+# -----------------------
 def add_comment_api(request, slug):
-    """
-    POST /api/challenge/<id>/comment/
-    Body JSON: { "content": "..." }
-    """
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Authentication required."}, status=401)
 
@@ -178,7 +212,6 @@ def add_comment_api(request, slug):
         created_at=timezone.now()
     )
 
-    # Convert the comment to a dictionary for return in JSON
     comment_dict = {
         "id": comment.id,
         "user": comment.user.username,
@@ -188,13 +221,15 @@ def add_comment_api(request, slug):
 
     return JsonResponse({"message": "Comment added.", "comment": comment_dict})
 
-#Build comment listing with pagination
+
+# -----------------------
+# List Comments API
+# -----------------------
 def comments_list_api(request, challenge_slug):
     page = int(request.GET.get("page", 1))
-    page_size = 5  # Number of comments on the page
+    page_size = 5
 
     comments = Comment.objects.filter(challenge__slug=challenge_slug).order_by("-created_at")
-
     paginator = Paginator(comments, page_size)
     page_obj = paginator.get_page(page)
 
@@ -215,7 +250,6 @@ def comments_list_api(request, challenge_slug):
     }
 
     return JsonResponse(data)
-
 
 # نقاط تقديرية حسب الصعوبة — اضبط القيم حسب سياساتك أو أضف حقل Challenge.points
 DIFFICULTY_POINTS = {
@@ -361,4 +395,3 @@ def global_stats_api(request):
     }
 
     return JsonResponse(payload, safe=False)
-

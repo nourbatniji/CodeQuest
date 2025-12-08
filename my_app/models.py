@@ -3,7 +3,7 @@ import re
 from django.utils import timezone
 from django.contrib.auth import get_user_model, authenticate
 from django.utils.text import slugify
-
+from django.core.validators import MinValueValidator    
 
 User = get_user_model()
 
@@ -17,7 +17,7 @@ def is_exist(email):
     return User.objects.filter(email=email).exists()
 
 def is_username_exist(username):
-    return User.objects.filter(username=username)
+    return User.objects.filter(username=username).exists()
 
 def validate_signup(postData):
     errors = {}
@@ -92,7 +92,7 @@ def get_user_by_id(id):
 
 class Classroom(models.Model):
     name = models.CharField(max_length=45)
-    slug = models.SlugField(unique=True, blank=True)  # مهم جداً blank=True
+    slug = models.SlugField(unique=True, blank=True)
     description = models.TextField(null=True, blank=True)
     mentor = models.ForeignKey(
         User,
@@ -107,7 +107,6 @@ class Classroom(models.Model):
             base_slug = slugify(self.name)
             slug = base_slug
             counter = 1
-
             # حل نهائي لمنع أي تكرار مستقبلي
             while Classroom.objects.filter(slug=slug).exists():
                 slug = f"{base_slug}-{counter}"
@@ -117,10 +116,11 @@ class Classroom(models.Model):
 
         super().save(*args, **kwargs)
 
+
     def member_count(self):
         return self.memberships.count()
 
-    def __str__(self):
+    def __str__(self):  
         return self.name
 
 
@@ -158,6 +158,7 @@ class Challenge(models.Model):
     slug = models.SlugField(unique=True, blank=True)
     classroom = models.ForeignKey(Classroom, on_delete=models.CASCADE, related_name="challenges")
     description = models.TextField()
+    points = models.IntegerField(default=10,validators=[MinValueValidator(0)])
     input_description = models.TextField(blank=True)
     output_description = models.TextField(blank=True)
     sample_input = models.TextField(blank=True)
@@ -165,37 +166,52 @@ class Challenge(models.Model):
     example_explanation = models.TextField(blank=True)
     constraints = models.TextField(blank=True)
     starter_code = models.TextField(blank=True)
-    hidden_tests = models.JSONField(blank=True, null=True) 
+    hidden_tests = models.JSONField(default=dict) 
     difficulty = models.CharField(max_length=10, choices=DIFFICULTY_CHOICES, default='easy')
     tags = models.ManyToManyField(Tag, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base_slug = slugify(self.title)
+            slug = base_slug
+            n = 1
+            while Challenge.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{n}"
+                n += 1
+            self.slug = slug
+        super().save(*args, **kwargs)  
 
     def __str__(self):
         return self.title
 
 
 class Submission(models.Model):
-    PENDING = "pending"
-    CORRECT = "correct"
-    WRONG = "wrong"
-
     STATUS_CHOICES = [
         ("pending", "Pending"),
         ("passed", "Passed"),
         ("failed", "Failed"),
     ]
 
-    PYTHON = "python"
     LANGUAGE_CHOICES = [
-        (PYTHON, "Python"),
+        ("python", "Python"),
+        ("javascript", "JavaScript"),
+        ("java", "Java"),
+        ("cpp", "C++"),
+        ("c", "C"),
+        ("ruby", "Ruby"),
+        ("go", "Go"),
+        ("php", "PHP"),
+        ("swift", "Swift"),
+        ("kotlin", "Kotlin")
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="submissions")
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE, related_name="submissions")
     code = models.TextField()
-    language = models.CharField(max_length=20, choices=LANGUAGE_CHOICES, default=PYTHON)
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
-    points_awarded = models.IntegerField(default=0)
+    language = models.CharField(max_length=20, choices=LANGUAGE_CHOICES, default='python')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    points_awarded = models.IntegerField(default=0,validators=[MinValueValidator(0)])
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -211,10 +227,14 @@ class Comment(models.Model):
 
 
 class Badge(models.Model):
+    FIRST_SOLVE = "first_solve"
+    CHALLENGE_COUNT = "challenge_count"
+    CLASSROOM_COMPLETE = "classroom_complete"
 
     REQUIREMENT_CHOICES = [
         ("first_solve", "First Solve"),
         ("challenge_count", "Challenge Count"),
+        ("classroom_complete", "Classroom Complete"),
     ]
 
     name = models.CharField(max_length=100)
@@ -252,25 +272,41 @@ class Profile(models.Model):
     ]
 
     user = models.OneToOneField(User, related_name='profile', on_delete=models.CASCADE)
+    level = models.CharField(max_length=20, default="Beginner")
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student')
-
+    points = models.IntegerField(default=0,validators=[MinValueValidator(0)])
     def __str__(self):
         return f"{self.user.username} ({self.role})"
 
 def check_user_badges(user):
-    solved_count = user.submissions.filter(status="passed").values("challenge").distinct().count()
+    solved_challenges = user.submissions.filter(status="passed").values_list("challenge", flat=True).distinct()
+    solved_count = solved_challenges.count()
     badges = Badge.objects.all()
 
     for badge in badges:
         if UserBadge.objects.filter(user=user, badge=badge).exists():
             continue
 
+        # FIRST SOLVE
         if badge.requirement_type == Badge.FIRST_SOLVE and solved_count >= 1:
             UserBadge.objects.create(user=user, badge=badge)
-
+        # CHALLENGE COUNT
         if badge.requirement_type == Badge.CHALLENGE_COUNT and solved_count >= badge.value:
             UserBadge.objects.create(user=user, badge=badge)
 
+        # CLASSROOM COMPLETE
+        if badge.requirement_type == Badge.CLASSROOM_COMPLETE:
+            # badge.value = classroom_id
+            classroom_id = badge.value
+            classroom = Classroom.objects.get(id=classroom_id)
+            total_challenges = classroom.challenges.count()
+            solved_in_class = classroom.challenges.filter(
+                submissions__user=user,
+                submissions__status="passed"
+            ).distinct().count()
+
+            if total_challenges > 0 and solved_in_class == total_challenges:
+                UserBadge.objects.create(user=user, badge=badge)
 
 def create_initial_badges():
     initial_badges = [
@@ -290,10 +326,3 @@ def create_initial_badges():
             value=b["value"],
             defaults={"description": b["desc"]}
         )
-
-
-#Slug Auto-generation
-def save(self, *args, **kwargs):
-    if not self.slug:
-        self.slug = slugify(self.title)
-    super().save(*args, **kwargs)

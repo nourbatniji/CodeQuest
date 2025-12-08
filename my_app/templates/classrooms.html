@@ -32,7 +32,9 @@
     </div>
 </div>
 
+
 <!-- Classrooms Grid -->
+<<<<<<< HEAD
 <div class="classroom-grid animate-fade-in" id="classrooms-container">
     <!-- سيتم إنشاء البطاقات هنا ديناميكيًا -->
 </div>
@@ -45,4 +47,53 @@
 {% block scripts %}
 {% load static %}
 <script src="{% static 'js/classrooms.js' %}"></script>
+=======
+<div class="classroom-grid animate-fade-in">
+    {% for c in classrooms %}
+    <div class="classroom-card">
+        <div class="classroom-card-header">
+            <h3>{{ c.name }}</h3>
+            <p>{{ c.description|default:"No description yet." }}</p>
+        </div>
+        <div class="classroom-card-body">
+            <div class="classroom-meta">
+                <div class="classroom-meta-item">
+                    <i class="fas fa-user-tie"></i>
+                    <span>{{ c.mentor.username }}</span>
+                </div>
+                <div class="classroom-meta-item">
+                    <i class="fas fa-users"></i>
+                    <span>{{ c.members_count }} members</span>
+                </div>
+            </div>
+            <div class="classroom-meta">
+                <div class="classroom-meta-item">
+                    <i class="fas fa-code"></i>
+                    <span>{{ c.challenges.count }} challenges</span>
+                </div>
+                <div class="classroom-meta-item">
+                    <i class="fas fa-clock"></i>
+                    <span>Created {{ c.created_at|date:"M d, Y" }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="classroom-card-footer">
+            <span style="font-size: 0.875rem; color: var(--text-secondary);">
+                <i class="fas fa-clock"></i>
+                Updated {{ c.created_at|date:"M d, Y" }}
+            </span>
+            <a href="{% url 'classroom_detail' slug=c.slug %}">
+                <button class="btn-modern btn-primary">
+                    <i class="fas fa-arrow-right"></i> View
+                </button>
+            </a>
+        </div>
+    </div>
+    {% empty %}
+        <p>No classrooms yet. Ask a mentor to create one in the admin.</p>
+    {% endfor %}
+</div>
+
+
+>>>>>>> 7b47caf5b20c518c396e46cc86c3708f81bd969e
 {% endblock %}
