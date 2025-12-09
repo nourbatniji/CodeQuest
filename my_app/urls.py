@@ -2,6 +2,7 @@ from django.urls import path
 from . import views,api_views
 from django.contrib.auth import views as auth_views
 
+
 urlpatterns = [
     path('', views.index),
     # Authentication
@@ -11,8 +12,8 @@ urlpatterns = [
  
     path('dashboard/', views.dashboard),
 
-    path('challenges/', views.challenges_page),
-    path('challenge/<slug:slug>/', views.challenge_detail),
+    path("challenges/", views.challenge_list, name="challenge_list"),
+    path("challenge/<slug:slug>/", views.challenge_detail, name="challenge_detail"),
     
     path('leaderboard/', views.leaderboard_page),
     path('profile/', views.profile_page),

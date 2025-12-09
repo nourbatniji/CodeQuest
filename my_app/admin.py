@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Classroom, ClassroomMembership, Challenge, Submission, Comment,
-    Badge, UserBadge
+    Badge, UserBadge, Tag
 )
 
 # ---------- Classroom ----------
@@ -76,3 +76,4 @@ class UserBadgeAdmin(admin.ModelAdmin):
     readonly_fields = ['earned_date']
 
 admin.site.register(UserBadge, UserBadgeAdmin)
+admin.site.register(Tag)
