@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect,get_object_or_404
 from . import models
-from .models import Classroom, ClassroomMembership, Challenge
+from .models import Classroom, ClassroomMembership, Challenge, Tag
 from django.contrib import messages
 from django.db.models import Count, Q
 from .decorators import staff_or_superuser_required
@@ -67,24 +67,6 @@ def dashboard(request):
     }
     return render(request, 'dashboard.html', context)
 
-def challenges_page(request):
-    if not request.user.is_authenticated:
-        return render(request, 'not_found.html')
-    challenges = models.Challenge.objects.annotate(
-        solved_count=Count('submissions', filter=Q(submissions__status='passed'), distinct=True)
-    )
-    return render(request, 'challenges.html', {'challenges': challenges})
-
-def challenge_detail(request,slug):
-    if not request.user.is_authenticated:
-        return render(request, 'not_found.html')
-    challenge = get_object_or_404(models.Challenge, slug=slug)
-    submissions = challenge.submissions.filter(user=request.user).order_by('-created_at')
-    comments = challenge.comments.all().order_by('-created_at')
-    context={"challenge": challenge,
-            "submissions": submissions,
-            "comments": comments}
-    return render(request, 'challenge_details.html',context)
 
 def leaderboard_page(request):
     if not request.user.is_authenticated:
@@ -104,11 +86,12 @@ def mentor_dashboard(request):
     return render(request, 'mentor.html')
 
 
+# ------------- CLASSROOMS -------------
 def classrooms_page(request):
     if not request.user.is_authenticated:
         return render(request, 'not_found.html')
     
-    classrooms = Classroom.objects.annotate(
+    classrooms = Classroom.objects.annotate( # adds extra calculated fields to each object in a queryset using database
         members_count=Count('memberships')
     )
     return render(request, 'classrooms.html', {'classrooms': classrooms})
@@ -118,11 +101,11 @@ def classroom_detail(request, slug=None):
     if not request.user.is_authenticated:
         return render(request, 'not_found.html')
     
-    classroom = get_object_or_404(Classroom.objects.annotate(members_count=Count('memberships')), slug=slug)
+    classroom = get_object_or_404(Classroom.objects.annotate(members_count=Count('memberships')), slug=slug) # looks for a classroom with the given slug/ find the classroom whose slug field matches the value in the URL
 
     is_member = ClassroomMembership.objects.filter(user=request.user, classroom=classroom).exists()
 
-    challenges_count = classroom.challenges.count() if hasattr(classroom, "challenges") else 0
+    challenges_count = classroom.challenges.count() if hasattr(classroom, "challenges") else 0 # if classroom has attribute named 'challenges'
 
     context = {
         "classroom": classroom,
@@ -136,10 +119,9 @@ def join_classroom(request, slug):
     if not request.user.is_authenticated:
         return render(request,"not_found.html")
 
-    classroom = get_object_or_404(Classroom, slug=slug)
+    classroom = get_object_or_404(Classroom, slug=slug)# fetch the classroom by slug
 
-    # Prevent duplicate membership
-    membership, created = ClassroomMembership.objects.get_or_create(
+    membership, created = ClassroomMembership.objects.get_or_create( # tries to find a row with this row and this classroom
         user=request.user,
         classroom=classroom
     )
@@ -151,11 +133,12 @@ def join_classroom(request, slug):
 
     return redirect("classroom_detail", slug=slug)
 
+
 def leave_classroom(request, slug):
     if not request.user.is_authenticated:
         return render(request, "not_found.html")
     
-    classroom = get_object_or_404(Classroom, slug=slug)
+    classroom = get_object_or_404(Classroom, slug=slug) 
 
     membership = ClassroomMembership.objects.filter(
         user=request.user,
@@ -171,51 +154,46 @@ def leave_classroom(request, slug):
     return redirect("classrooms_page")  
 
 
-#Implementing challenge-classroom assignment logic
-@staff_or_superuser_required
-def create_challenge(request, classroom_slug):
-    classroom = get_object_or_404(Classroom, slug=classroom_slug)
-
-    # Only the mentor can create challenges
-    if request.user != classroom.mentor:
-        messages.error(request, "Only the mentor can create challenges.")
-        return redirect("classroom_detail", slug=classroom_slug)
-
-    if request.method == "POST":
-        Challenge.objects.create(
-            title=request.POST["title"],
-            description=request.POST["description"],
-            difficulty=request.POST["difficulty"],
-            tags=request.POST.get("tags", ""),
-            classroom=classroom,
-            input_description=request.POST.get("input_format", ""),
-            output_desciption=request.POST.get("output_format", ""),
-            sample_input=request.POST.get("sample_io", "")
-        )
-        messages.success(request, "Challenge created successfully!")
-        return redirect("classroom_detail", slug=classroom_slug)
-
-    return render(request, "challenges/create.html", {"classroom": classroom})
-
-#Add challenge filtering (difficulty/classroom/tags)
-
+# ------------- CHALLENGES -------------
 def challenge_list(request):
     challenges = Challenge.objects.all()
+    tags = Tag.objects.all()
+    classrooms = Classroom.objects.all()
 
     difficulty = request.GET.get("difficulty")
     classroom_id = request.GET.get("classroom")
-    tag = request.GET.get("tag")
+    tag_id = request.GET.get("tag")
 
-    if difficulty:
-        challenges = challenges.filter(difficulty=difficulty)
+    if difficulty and difficulty != 'all':
+        challenges = challenges.filter(difficulty__iexact=difficulty)
 
     if classroom_id:
-        challenges = challenges.filter(classroom__id=classroom_id)
+        challenges = challenges.filter(classroom_id=classroom_id)
 
-    if tag:
-        challenges = challenges.filter(tags__icontains=tag)
+    if tag_id:
+        challenges = challenges.filter(tags__id=tag_id)
 
-    return render(request, "challenges/list.html", {
-        "challenges": challenges
-    })
 
+    context = {
+        'challenges': challenges,
+        'classrooms': classrooms,
+        'tags': tags,
+        'selected_difficulty': difficulty,
+        'selected_classroom': classroom_id,
+        'selected_tag': tag_id
+    }
+
+    return render(request, "challenges.html", context)
+
+
+
+def challenge_detail(request,slug):
+    if not request.user.is_authenticated:
+        return render(request, 'not_found.html')
+    challenge = get_object_or_404(models.Challenge, slug=slug)
+    submissions = challenge.submissions.filter(user=request.user).order_by('-created_at')
+    comments = challenge.comments.all().order_by('-created_at')
+    context={"challenge": challenge,
+            "submissions": submissions,
+            "comments": comments}
+    return render(request, 'challenge_details.html',context)

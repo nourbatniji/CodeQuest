@@ -17,97 +17,103 @@
 
 <!-- Filters -->
 <div class="leaderboard-filters animate-fade-in">
-    <div class="filter-row">
+    <form method="get" class="filter-row">
         <div class="filter-group" style="flex: 2;">
             <label class="filter-label">Search Challenges</label>
-            <input type="text" class="form-control-modern" placeholder="Search by title or tags..."
-                id="searchChallenges">
+            <input type="text" class="form-control-modern" placeholder="Search by title or tags..." name="search"
+                value="{{ request.GET.search }}" id="searchChallenges">
         </div>
+
+        <!-- Difficulty filter -->
         <div class="filter-group">
             <label class="filter-label">Difficulty</label>
-            <select class="filter-select">
+            <select class="filter-select" name="difficulty" onchange="this.form.submit()">
                 <option value="all">All Levels</option>
-                <option value="easy">Easy</option>
-                <option value="medium">Medium</option>
-                <option value="hard">Hard</option>
+                <option value="easy" {% if selected_difficulty == "easy" %}selected{% endif %}>Easy</option>
+                <option value="medium" {% if selected_difficulty == "medium" %}selected{% endif %}>Medium</option>
+                <option value="hard" {% if selected_difficulty == "hard" %}selected{% endif %}>Hard</option>
             </select>
         </div>
+
+        <!-- Classroom filter -->
         <div class="filter-group">
             <label class="filter-label">Classroom</label>
-            <select class="filter-select">
-                <option value="all">All Classrooms</option>
-                <option value="1">Python Fundamentals</option>
-                <option value="2">Data Structures</option>
-                <option value="3">Web Development</option>
+            <select class="filter-select" name="classroom" onchange="this.form.submit()">
+                <option value="">All Classrooms</option>
+                {% for c in classrooms %}
+                <option value="{{ c.id }}" 
+                {% if selected_classroom|stringformat:"s" == c.id|stringformat:"s" %}selected{% endif %}>
+                    {{ c.name }}
+                </option>
+                {% endfor %}
             </select>
         </div>
+
+        <!-- Tag filter -->
+        <div class="filter-group">
+            <label class="filter-label">Tags</label>
+            <select class="filter-select" name="tag" onchange="this.form.submit()">
+                <option value="">All Tags</option>
+                {% for t in tags %}
+                <option value="{{ t.id }}" {% if selected_tag|stringformat:"s" == t.id|stringformat:"s" %}selected{% endif %}>
+                    {{ t.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Optional status filter (UI only for now) -->
         <div class="filter-group">
             <label class="filter-label">Status</label>
-            <select class="filter-select">
-                <option value="all">All Challenges</option>
+            <select class="filter-select" name="status">
+                <option value="">All Challenges</option>
                 <option value="not_started">Not Started</option>
                 <option value="in_progress">In Progress</option>
                 <option value="completed">Completed</option>
             </select>
         </div>
-    </div>
+
+        <div class="filter-group" style="align-self: flex-end;">
+            <button type="submit" class="btn-modern btn-primary">Apply</button>
+        </div>
+    </form>
 </div>
-{% for challenge in challenges %}
+
 <!-- Challenges List -->
 <div class="challenge-list animate-fade-in">
-    <!-- Challenge 1 -->
-    <div class="challenge-item" onclick="window.location.href='/challenge/{{challenge.slug}}/'">
+    {% for challenge in challenges %}
+    <div class="challenge-item" onclick="window.location.href='/challenge/{{ challenge.slug }}/'">
         <div class="challenge-info">
-            <div class="challenge-title">{{challenge.title}}</div>
+            <div class="challenge-title">{{ challenge.title }}</div>
             <div class="challenge-meta">
                 <span class="badge-modern badge-easy">
-                    <i class="fas fa-circle"></i> {{challenge.difficulty}}
+                    <i class="fas fa-circle"></i> {{ challenge.difficulty }}
                 </span>
                 <span style="color: var(--text-secondary); font-size: 0.875rem;">
-                    <i class="fas fa-folder"></i> {{challenge.classroom.name}}
+                    <i class="fas fa-folder"></i> {{ challenge.classroom.name }}
                 </span>
                 <span style="color: var(--text-secondary); font-size: 0.875rem;">
-                    <i class="fas fa-tags"></i> {{challenge.tags}}
+                    <i class="fas fa-tags"></i>
+                    {% for tag in challenge.tags.all %}
+                    {{ tag.name }}{% if not forloop.last %}, {% endif %}
+                    {% empty %}
+                    No tags
+                    {% endfor %}
                 </span>
             </div>
         </div>
         <div class="challenge-actions">
             <span style="color: var(--text-secondary); font-size: 0.875rem;">
-                <i class="fas fa-users"></i> {{challenge.solved_count}}
+                <i class="fas fa-users"></i> {{ challenge.solved_count }}
             </span>
             <button class="btn-modern btn-primary">
                 <i class="fas fa-play"></i> Start
             </button>
         </div>
     </div>
-{% endfor %}
-    <!-- Challenge 2 -->
-    <div class="challenge-item" onclick="window.location.href='/challenge/2'">
-        <div class="challenge-info">
-            <div class="challenge-title">Reverse a Linked List</div>
-            <div class="challenge-meta">
-                <span class="badge-modern badge-medium">
-                    <i class="fas fa-circle"></i> Medium
-                </span>
-                <span style="color: var(--text-secondary); font-size: 0.875rem;">
-                    <i class="fas fa-folder"></i> Data Structures
-                </span>
-                <span style="color: var(--text-secondary); font-size: 0.875rem;">
-                    <i class="fas fa-tags"></i> Linked List, Pointers
-                </span>
-            </div>
-        </div>
-        <div class="challenge-actions">
-            <span style="color: var(--text-secondary); font-size: 0.875rem;">
-                <i class="fas fa-users"></i> 189 solved
-            </span>
-            <button class="btn-modern btn-primary">
-                <i class="fas fa-play"></i> Start
-            </button>
-        </div>
-    </div>
-
-
+    {% empty %}
+    <p>No challenges found.</p>
+    {% endfor %}
 </div>
 
 {% endblock %}

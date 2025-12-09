@@ -83,7 +83,7 @@
     <div style="display: flex; justify-content: space-between; align-items: start;">
         <div>
             <h1><i class="fas fa-code"></i> {{challenge.title}}</h1>
-            <p>{{challenge.description}}</p>
+            
         </div>
         <div style="display: flex; gap: 0.5rem; align-items: center;">
             <span class="badge-modern badge-easy">
@@ -103,14 +103,9 @@
         <h3 style="margin-bottom: 1rem; color: var(--text-primary);">
             <i class="fas fa-book"></i> Problem Description
         </h3>
-
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
-            {{challenge.input_description}}
-        </p>
-
-        <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">
-            {{challenge.output_description}}
-        </p>
+        <p class="text-black">{{challenge.description}}</p>
+        <p class="m-0"><span class="text-black">Input description:</span> {{challenge.input_description}}</p>
+        <p><span class="text-black">Output description:</span> {{challenge.output_description}}</p>
 
         <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">
             <i class="fas fa-lightbulb"></i> Example
@@ -167,9 +162,7 @@
         <form method="POST" action="/challenge/1/submit/">
             {% csrf_token %}
             <textarea id="code-editor" class="code-editor" name="code" placeholder="Write your solution here..."
-                spellcheck="false">def twoSum(nums, target):
-                # Write your solution here
-                pass
+            spellcheck="false">{{ challenge.starter_code }}
             </textarea>
             <div style="display: flex; gap: 1rem; margin-top: 1rem;">
                 <button id="submit-btn" type="submit" class="btn-modern btn-primary" style="flex: 1;">
@@ -216,7 +209,7 @@
             <i class="fas fa-clock"></i>{{ submission.created_at|timesince }} ago
         </div>
     </div>
-     <!-- كود السبمشن -->
+     <!-- submission code -->
     <pre class="submission-code"><code class="language-python">{{ submission.code }}</code></pre>
     <div style="display: flex; gap: 1rem; align-items: right;">
         <span class="badge-modern" style="background-color: rgba(16, 185, 129, 0.1); color: var(--success);">
