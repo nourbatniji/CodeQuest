@@ -24,6 +24,8 @@ urlpatterns = [
     path('classroom/<slug:slug>/join/', views.join_classroom, name='join_classroom'),
     path('classroom/<slug:slug>/leave/', views.leave_classroom, name='leave_classroom'),
 
+    path('leaderboard/', views.leaderboard_page, name='leaderboard'),
+    path('leaderboard/classroom/<int:classroom_id>/', views.leaderboard_page, name='classroom_leaderboard'),
 
 ]
 
