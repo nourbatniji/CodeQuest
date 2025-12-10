@@ -78,7 +78,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'CodeQuest',
         'USER': 'root',
-        'PASSWORD': 'root',
+        'PASSWORD': '123',
         'HOST': 'localhost',
         'PORT': '3306',
     }

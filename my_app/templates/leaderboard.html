@@ -22,15 +22,15 @@
     </div>
     <div class="my-rank-stats">
         <div class="my-rank-stat">
-            <div class="my-rank-stat-value">#{{ user_rank|default:"47" }}</div>
+            <div class="my-rank-stat-value" id="user_rank"></div>
             <div class="my-rank-stat-label">Global Rank</div>
         </div>
         <div class="my-rank-stat">
-            <div class="my-rank-stat-value">{{ user_points|default:"850" }}</div>
+            <div class="my-rank-stat-value" id="user_points">{{ user_points|default:"850" }}</div>
             <div class="my-rank-stat-label">Total Points</div>
         </div>
         <div class="my-rank-stat">
-            <div class="my-rank-stat-value">+{{ rank_change|default:"12" }}</div>
+            <div class="my-rank-stat-value" id="rank_change">+{{ rank_change|default:"12" }}</div>
             <div class="my-rank-stat-label">This Week</div>
         </div>
     </div>

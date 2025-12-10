@@ -12,6 +12,7 @@
 <div class="dashboard-header animate-fade-in">
     <h1>Welcome back, {{ user.username|default:"Student" }}! 👋</h1>
     <p>Ready to tackle some challenges today?</p>
+    <p>Current user: {{ request.user.username }}</p>
 </div>
 
 <!-- Stats Grid -->
@@ -20,7 +21,7 @@
         <div class="stat-card-icon primary">
             <i class="fas fa-trophy"></i>
         </div>
-        <div class="stat-card-value">{{ total_solved|default:"0" }}</div>
+        <div class="stat-card-value"  id="user-solved">{{ total_solved|default:"0" }}</div>
         <div class="stat-card-label">Challenges Solved</div>
         <div class="stat-card-change positive">
             <i class="fas fa-arrow-up"></i>
@@ -31,7 +32,7 @@
         <div class="stat-card-icon success">
             <i class="fas fa-star"></i>
         </div>
-        <div class="stat-card-value">{{ total_points|default:"0" }}</div>
+        <div class="stat-card-value" id="user-points">{{ total_points|default:"0" }}</div>
         <div class="stat-card-label">Total Points</div>
         <div class="stat-card-change positive">
         </div>
@@ -49,7 +50,7 @@
         <div class="stat-card-icon info">
             <i class="fas fa-chart-line"></i>
         </div>
-        <div class="stat-card-value">#{{ global_rank|default:"--" }}</div>
+        <div class="stat-card-value"  id="user-rank">#{{ global_rank|default:"--" }}</div>
         <div class="stat-card-label">Global Rank</div>
         <div class="stat-card-change positive">
         </div>
@@ -86,47 +87,10 @@
         View All <i class="fas fa-arrow-right"></i>
     </a>
 </div>
-
-<div class="classroom-grid animate-fade-in">
-    <!-- Sample Classroom Card 1 -->
-    <div class="classroom-card" onclick="window.location.href='/classroom/1'">
-        <div class="classroom-card-header">
-            <h3>Python Fundamentals</h3>
-            <p>Master the basics of Python programming</p>
-        </div>
-        <div class="classroom-card-body">
-            <div class="classroom-meta">
-                <div class="classroom-meta-item">
-                    <i class="fas fa-user-tie"></i>
-                    <span>Prof. Johnson</span>
-                </div>
-                <div class="classroom-meta-item">
-                    <i class="fas fa-users"></i>
-                    <span>45 members</span>
-                </div>
-            </div>
-            <div class="classroom-meta">
-                <div class="classroom-meta-item">
-                    <i class="fas fa-code"></i>
-                    <span>12 challenges</span>
-                </div>
-                <div class="classroom-meta-item">
-                    <i class="fas fa-check-circle"></i>
-                    <span>8 completed</span>
-                </div>
-            </div>
-            <div class="progress-modern">
-                <div class="progress-bar-modern" style="width: 67%;"></div>
-            </div>
-        </div>
-        <div class="classroom-card-footer">
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">67% Complete</span>
-            <span class="badge-modern badge-primary">Active</span>
-        </div>
-    </div>
-
-
+<div class="classroom-grid" id="home-user-classrooms">
+    <!-- Dynamic classrooms will appear here -->
 </div>
+
 
 <!-- Recently Solved Challenges -->
 <div class="section-header">
@@ -169,4 +133,8 @@
 
 
 
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static 'js/home_classrooms.js' %}"></script>
 {% endblock %}
