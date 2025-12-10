@@ -1,32 +1,37 @@
 from django.urls import path
-from . import views,api_views
+from . import views, api_views
 from django.contrib.auth import views as auth_views
 
-
 urlpatterns = [
-    path('', views.index),
-    # Authentication
-    path('login/', views.login),
-    path('signup/', views.signup),
-    path('signout/', views.signout),
- 
-    path('dashboard/', views.dashboard),
+    path("", views.index, name="index"),
+    path("login/", views.login, name="login"),
+    path("signup/", views.signup, name="signup"),
+    path("signout/", views.signout, name="signout"),
+    path("dashboard/", views.dashboard, name="dashboard"),
 
+    # list page
     path("challenges/", views.challenge_list, name="challenge_list"),
-    path('challenge/<int:challenge_id>/<slug:challenge_slug>/',views.ChallengeDetailView.as_view(),name='challenge_detail'),
-    path('challenge/<int:challenge_id>/<slug:challenge_slug>/comment/',views.AddCommentView.as_view(),name="add_comment"),
 
-    path('leaderboard/', views.leaderboard_page),
-    path('profile/', views.profile_page),
-    path('mentor_dashboard/', views.mentor_dashboard),
+    # DETAIL (slug-only, singular 'challenge')
+    path("challenge/<slug:challenge_slug>/", views.ChallengeDetailView.as_view(),name="challenge_detail",),
 
-    path('classrooms/', views.classrooms_page),
-    path('classroom/<slug:slug>/', views.classroom_detail, name='classroom_detail'),
-    path('classroom/<slug:slug>/join/', views.join_classroom, name='join_classroom'),
-    path('classroom/<slug:slug>/leave/', views.leave_classroom, name='leave_classroom'),
+    # comments
+    path("challenge/<slug:challenge_slug>/comment/",views.AddCommentView.as_view(),name="add_comment",),
 
-    path('leaderboard/', views.leaderboard_page, name='leaderboard'),
-    path('leaderboard/classroom/<int:classroom_id>/', views.leaderboard_page, name='classroom_leaderboard'),
+    # submit code
+    path("challenge/<slug:challenge_slug>/submit/",views.challenge_submit,name="challenge_submit",),
 
+    # run tests
+    path("challenge/<slug:challenge_slug>/run-tests/",views.run_tests_view,name="run_tests",),
+
+    path("leaderboard/", views.leaderboard_page, name="leaderboard"),
+    path("leaderboard/classroom/<int:classroom_id>/",views.leaderboard_page,name="classroom_leaderboard",),
+
+    path("profile/", views.profile_page, name="profile"),
+    path("mentor_dashboard/", views.mentor_dashboard, name="mentor_dashboard"),
+
+    path("classrooms/", views.classrooms_page, name="classrooms_page"),
+    path("classroom/<slug:slug>/", views.classroom_detail, name="classroom_detail"),
+    path("classroom/<slug:slug>/join/", views.join_classroom, name="join_classroom"),
+    path("classroom/<slug:slug>/leave/", views.leave_classroom, name="leave_classroom"),
 ]
-

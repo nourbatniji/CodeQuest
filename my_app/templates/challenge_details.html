@@ -1,7 +1,5 @@
 {% extends 'base.html' %}
-{% for challenge in challenges %}
 {% block title %}{{ challenge.title }} Problem - CodeQuest{% endblock %}
-{% endfor %}
 {% block extra_css %}
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
@@ -241,7 +239,7 @@
         </h4>
 
         <!-- Updated form to use the comment endpoint -->
-        <form method="POST" action="{% url 'add_comment' challenge.id challenge.slug %}">
+        <form method="POST" action="{% url 'add_comment' challenge.slug %}">
             {% csrf_token %}
             <textarea class="form-control-modern" name="text" rows="3"
                 placeholder="Ask a question or share a hint..." 
@@ -270,34 +268,6 @@
             <p style="margin-top:0.5rem; color:var(--text-primary);">
                 {{ comment.text }}
             </p>
-
-            <!-- Reply Form -->
-            <form method="POST" action="{% url 'add_comment' challenge.id challenge.slug %}" style="margin-top:1rem;">
-                {% csrf_token %}
-                <input type="hidden" name="parent_id" value="{{ comment.id }}">
-                <textarea name="text" rows="2" class="form-control-modern"
-                    placeholder="Reply..." style="width:100%; margin-bottom:0.5rem;" required></textarea>
-
-                <button type="submit" class="btn-modern btn-secondary" style="padding:0.4rem 0.8rem;">
-                    Reply
-                </button>
-            </form>
-
-            <!-- Replies -->
-            {% for reply in comment.replies.all %}
-                <div class="comment-box" style="margin-top:1rem; margin-left:2rem; background:var(--bg-tertiary);">
-                    <p style="margin:0;">
-                        <strong>{{ reply.user.username }}</strong>
-                        <span style="color:var(--text-secondary); font-size:0.85rem;">
-                            • {{ reply.created_at|timesince }} ago
-                        </span>
-                    </p>
-
-                    <p style="margin-top:0.5rem; color:var(--text-primary);">
-                        {{ reply.text }}
-                    </p>
-                </div>
-            {% endfor %}
         </div>
     {% empty %}
         <p style="color:var(--text-secondary);">No comments yet.</p>

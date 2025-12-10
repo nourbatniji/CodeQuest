@@ -273,9 +273,9 @@ def leave_classroom(request, slug):
     return redirect("classrooms_page")
 
 
-# =======================
-#       CHALLENGES
-# =======================
+
+# ------------ CHALLENGES ------------
+
 def challenge_list(request):
     challenges = Challenge.objects.all()
     tags = Tag.objects.all()
@@ -315,87 +315,60 @@ def challenge_list(request):
 
     return render(request, "challenges.html", context)
 
-
 class AddCommentView(View):
-    def post(self, request, challenge_id, challenge_slug):
+    def post(self, request, challenge_slug):
         if not request.user.is_authenticated:
             return redirect("login")
 
-        challenge = get_object_or_404(
-            Challenge,
-            id=challenge_id,
-            slug=challenge_slug,
-        )
+        challenge = get_object_or_404(Challenge, slug=challenge_slug)
 
-        text = request.POST.get("text")
-        parent_id = request.POST.get("parent_id")  # reply
-
-        if not text or not text.strip():
-            return redirect(request.META.get("HTTP_REFERER"))
-
-        parent = None
-        if parent_id:
-            parent = Comment.objects.filter(id=parent_id).first()
+        content = (request.POST.get("content") or "").strip()
+        if not content:
+            # nothing written, just reload the page
+            return redirect("challenge_detail", challenge_slug=challenge.slug)
 
         Comment.objects.create(
             challenge=challenge,
             user=request.user,
-            text=text,
-            parent=parent,
+            content=content,
         )
 
-        return redirect(
-            "challenge_detail",
-            challenge_id=challenge.id,
-            challenge_slug=challenge.slug,
-        )
-
+        return redirect("challenge_detail", challenge_slug=challenge.slug)
 
 class ChallengeDetailView(View):
-    def get(self, request, challenge_id, challenge_slug):
+    def get(self, request, challenge_slug):
         if not request.user.is_authenticated:
             return render(request, "not_found.html")
 
-        challenge = get_object_or_404(
-            Challenge,
-            id=challenge_id,
-            slug=challenge_slug,
-        )
+        challenge = get_object_or_404(Challenge, slug=challenge_slug)
 
-        # submissions by this user
+        # User submissions for this challenge
         submissions = challenge.submissions.filter(
             user=request.user
         ).order_by("-created_at")
 
-        # root comments (parent is null)
-        root_comments = challenge.comments.filter(
-            parent__isnull=True
-        ).order_by("-created_at")
+        # All comments for this challenge (flat, no parent)
+        comments_qs = challenge.comments.all().order_by("-created_at")
 
         # Pagination (5 comments per page)
-        paginator = Paginator(root_comments, 5)
+        paginator = Paginator(comments_qs, 5)
         page_number = request.GET.get("page")
         page_obj = paginator.get_page(page_number)
 
         context = {
             "challenge": challenge,
             "submissions": submissions,
-            "comments": page_obj,   # iterable list for template
-            "page_obj": page_obj,   # for pagination controls
+            "comments": page_obj,   # you can use this if needed
+            "page_obj": page_obj,   # template already loops on page_obj
         }
-        return render(request, "challenges/challenge_details.html", context)
+        return render(request, "challenge_details.html", context)
 
-
-# =======================
-#   CHALLENGE SUBMIT / RUN
-# =======================
 @require_POST
 def challenge_submit(request, slug):
-    # 1) Make sure the user is logged in
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Not authenticated"}, status=403)
 
-    # 2) Get the challenge from the database (or 404 if slug is wrong)
+    # Get the challenge from the database (or 404 if slug is wrong)
     challenge = get_object_or_404(Challenge, slug=slug)
 
     # 3) Read the user's code from the form (textarea named "code")
