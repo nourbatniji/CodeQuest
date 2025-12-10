@@ -271,6 +271,22 @@ class Profile(models.Model):
     points = models.IntegerField(default=0,validators=[MinValueValidator(0)])
     def __str__(self):
         return f"{self.user.username} ({self.role})"
+    
+class ChallengeProgress(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE)
+
+    status = models.CharField(max_length=20, choices=[
+        ('not_started', 'Not Started'),
+        ('in_progress', 'In Progress'),
+        ('passed', 'Passed'),
+    ])
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ('user', 'challenge')
+
 
 def check_user_badges(user):
     solved_challenges = user.submissions.filter(status="passed").values_list("challenge", flat=True).distinct()
