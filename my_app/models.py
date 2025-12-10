@@ -3,8 +3,9 @@ import re
 from django.utils import timezone
 from django.contrib.auth import get_user_model, authenticate
 from django.utils.text import slugify
-from django.core.validators import MinValueValidator    
-
+from django.core.validators import MinValueValidator 
+from django.db.models import Sum, Q,Count
+from datetime import timedelta
 User = get_user_model()
 
 # ---------- AUTH HELPERS (not a manager) ----------
@@ -214,10 +215,20 @@ class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE, related_name="comments")
     content = models.TextField()
+    parent = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='replies'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
 
     def __str__(self):
-        return f"Comment by {self.user}"
+        return f"Comment by {self.user.username}"
 
 
 class Badge(models.Model):
@@ -269,8 +280,68 @@ class Profile(models.Model):
     level = models.CharField(max_length=20, default="Beginner")
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student')
     points = models.IntegerField(default=0,validators=[MinValueValidator(0)])
+
     def __str__(self):
         return f"{self.user.username} ({self.role})"
+
+    @staticmethod
+    def get_global_leaderboard():
+        return Profile.objects.annotate(
+        total_points=Sum('user__submissions__points_awarded', filter=Q(user__submissions__status='passed')),
+        solved_count=Count('user__submissions', filter=Q(user__submissions__status='passed')),
+        badges_count=Count('user__badges')
+        ).order_by('-total_points')
+    
+    @staticmethod
+    def get_classroom_leaderboard(classroom_id):
+        """
+        Returns a queryset of Profiles annotated with:
+        - total_points earned in this classroom
+        - solved_count in this classroom
+        - badges_count
+        Ordered by solved_count, then total_points
+        """
+        return Profile.objects.annotate(
+            total_points=Sum(
+                'user__submissions__points_awarded',
+                filter=Q(user__submissions__status='passed', user__submissions__challenge__classroom_id=classroom_id)
+            ),
+            solved_count=Count(
+                'user__submissions',
+                filter=Q(user__submissions__status='passed', user__submissions__challenge__classroom_id=classroom_id)
+            ),
+            badges_count=Count('user__badges')
+        ).filter(
+            user__submissions__challenge__classroom_id=classroom_id
+        ).distinct().order_by('-solved_count', '-total_points')
+    
+
+    @classmethod
+    def get_leaderboard_by_time(cls, timeframe='all', classroom_id=None):
+        qs = Profile.objects.annotate(
+            total_points=Sum('user__submissions__points_awarded', filter=Q(user__submissions__status='passed')),
+            solved_count=Count('user__submissions', filter=Q(user__submissions__status='passed')),
+            badges_count=Count('user__badges')
+        )
+
+        if classroom_id:
+            qs = qs.filter(user__submissions__challenge__classroom_id=classroom_id)
+
+        if timeframe == 'week':
+            week_start = timezone.now() - timedelta(days=7)
+            qs = qs.annotate(
+                total_points=Sum('user__submissions__points_awarded', filter=Q(user__submissions__status='passed',  user__submissions__created_at__gte=week_start)),
+                solved_count=Count('user__submissions', filter=Q(user__submissions__status='passed',    user__submissions__created_at__gte=week_start))
+            )
+        elif timeframe == 'month':
+            month_start = timezone.now() - timedelta(days=30)
+            qs = qs.annotate(
+                total_points=Sum('user__submissions__points_awarded', filter=Q(user__submissions__status='passed',  user__submissions__created_at__gte=month_start)),
+                solved_count=Count('user__submissions', filter=Q(user__submissions__status='passed',    user__submissions__created_at__gte=month_start))
+            )
+
+        return qs.order_by('-total_points')
+
 
 def check_user_badges(user):
     solved_challenges = user.submissions.filter(status="passed").values_list("challenge", flat=True).distinct()

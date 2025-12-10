@@ -232,16 +232,21 @@
 <div class="section-header">
     <h2><i class="fas fa-comments"></i> Discussions</h2>
 </div>
+
 <div class="animate-fade-in">
     <!-- Comment Form -->
     <div class="card-modern" style="margin-bottom: 1.5rem;">
         <h4 style="margin-bottom: 1rem; color: var(--text-primary);">
             <i class="fas fa-comment-dots"></i> Add a Comment
         </h4>
-        <form id="comment-form"  data-slug="{{ challenge.slug }}">
+
+        <!-- Updated form to use the comment endpoint -->
+        <form method="POST" action="{% url 'add_comment' challenge.id challenge.slug %}">
             {% csrf_token %}
-            <textarea class="form-control-modern" name="comment" rows="3"
-                placeholder="Ask a question or share a hint..." style="width: 100%; margin-bottom: 1rem;"></textarea>
+            <textarea class="form-control-modern" name="text" rows="3"
+                placeholder="Ask a question or share a hint..." 
+                style="width: 100%; margin-bottom: 1rem;" required></textarea>
+
             <button type="submit" class="btn-modern btn-primary">
                 <i class="fas fa-paper-plane"></i> Post Comment
             </button>
@@ -250,17 +255,74 @@
 </div>
 
 <!-- Comments List -->
- 
- <div id="comment-list">
+<div id="comment-list" class="animate-fade-in">
     <h3>Comments</h3>
-        <!-- Container where AJAX will inject comments -->
-        <div id="comments-container" class="comments-list"></div>
-        <!-- Pagination Controls -->
-    <div id="pagination-controls" style="margin-top: 1rem;">
-        <button id="prev-page" class="btn-modern btn-secondary" disabled>Previous</button>
-        <button id="next-page" class="btn-modern btn-secondary" disabled>Next</button>
+
+    {% for comment in page_obj %}
+        <div class="comment-box">
+            <p style="margin:0;">
+                <strong>{{ comment.user.username }}</strong>
+                <span style="color:var(--text-secondary); font-size:0.85rem;">
+                    • {{ comment.created_at|timesince }} ago
+                </span>
+            </p>
+
+            <p style="margin-top:0.5rem; color:var(--text-primary);">
+                {{ comment.text }}
+            </p>
+
+            <!-- Reply Form -->
+            <form method="POST" action="{% url 'add_comment' challenge.id challenge.slug %}" style="margin-top:1rem;">
+                {% csrf_token %}
+                <input type="hidden" name="parent_id" value="{{ comment.id }}">
+                <textarea name="text" rows="2" class="form-control-modern"
+                    placeholder="Reply..." style="width:100%; margin-bottom:0.5rem;" required></textarea>
+
+                <button type="submit" class="btn-modern btn-secondary" style="padding:0.4rem 0.8rem;">
+                    Reply
+                </button>
+            </form>
+
+            <!-- Replies -->
+            {% for reply in comment.replies.all %}
+                <div class="comment-box" style="margin-top:1rem; margin-left:2rem; background:var(--bg-tertiary);">
+                    <p style="margin:0;">
+                        <strong>{{ reply.user.username }}</strong>
+                        <span style="color:var(--text-secondary); font-size:0.85rem;">
+                            • {{ reply.created_at|timesince }} ago
+                        </span>
+                    </p>
+
+                    <p style="margin-top:0.5rem; color:var(--text-primary);">
+                        {{ reply.text }}
+                    </p>
+                </div>
+            {% endfor %}
+        </div>
+    {% empty %}
+        <p style="color:var(--text-secondary);">No comments yet.</p>
+    {% endfor %}
+
+    <!-- Pagination -->
+    <div class="pagination" style="margin-top:1rem; display:flex; gap:1rem;">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="btn-modern btn-secondary">Previous</a>
+        {% else %}
+            <button disabled class="btn-modern btn-secondary">Previous</button>
+        {% endif %}
+
+        <span style="align-self:center; color:var(--text-primary);">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="btn-modern btn-secondary">Next</a>
+        {% else %}
+            <button disabled class="btn-modern btn-secondary">Next</button>
+        {% endif %}
     </div>
 </div>
+
 
 
 <!-- Hidden Tests Data -->
