@@ -21,6 +21,7 @@ from datetime import timedelta
 from django.views import View
 from django.core.paginator import Paginator
 import json
+import traceback
 
 
 def index(request):
@@ -299,19 +300,7 @@ def challenge_list(request):
     if tag:
         challenges = challenges.filter(tags__id=tag)
 
-    for ch in challenges:
-        user_submissions = ch.submissions.filter(user=request.user)
-
-        if not user_submissions.exists():
-            ch.status = 'not_started'
-
-        else:
-            latest = user_submissions.latest('created_at')
-            if latest.is_passed:
-                ch.status = 'passed'
-            else:
-                ch.status = 'in_progress'
-
+   
     
 
     context = {
@@ -402,84 +391,96 @@ class ChallengeDetailView(View):
         }
         return render(request, "challenge_details.html", context)
 
+
+
 @require_POST
-def challenge_submit(request, slug):
-    if not request.user.is_authenticated:
-        return JsonResponse({"error": "Not authenticated"}, status=403)
+def challenge_submit(request, challenge_slug):
+    try:
+        if not request.user.is_authenticated:
+            return JsonResponse({"error": "Not authenticated"}, status=403)
 
-    # Get the challenge from the database (or 404 if slug is wrong)
-    challenge = get_object_or_404(Challenge, slug=slug)
+        # 1) Get challenge
+        challenge = get_object_or_404(Challenge, slug=challenge_slug)
 
-    # 3) Read the user's code from the form (textarea named "code")
-    user_code = request.POST.get("code", "")
+        # 2) Read + validate code and language
+        user_code = (request.POST.get("code") or "").strip()
+        language = request.POST.get("language", "python")
 
-    # 4) Get this challenge's hidden tests (list of {input, output} objects)
-    tests = challenge.hidden_tests or []  # if None → use []
+        if not user_code:
+            return JsonResponse({"error": "Code is required"}, status=400)
 
-    # 5) Create a Submission row in the database with status "pending"
-    submission = Submission.objects.create(
-        user=request.user,
-        challenge=challenge,
-        code=user_code,
-        language="python",
-        status="pending",
-    )
+        valid_languages = {choice[0] for choice in Submission.LANGUAGE_CHOICES}
+        if language not in valid_languages:
+            language = "python"
 
-    results = []  # will hold details for each test
-    all_passed = True  # assume everything will pass at the start
+        tests = challenge.hidden_tests or []
 
-    # 6) Run the user's code on each test case
-    for test in tests:
-        test_input = test.get("input", "")
-        expected_output = (test.get("output", "") or "").strip()
+        # 3) Create Submission (pending)
+        submission = Submission.objects.create(
+            user=request.user,
+            challenge=challenge,
+            code=user_code,
+            language=language,
+            status="pending",
+        )
 
-        # run_python_code returns (ok, output)
-        ok, actual_output = run_python_code(user_code, test_input)
-        actual_output = (actual_output or "").strip()
+        results = []
+        all_passed = True
 
-        # Test passes only if:
-        # - code ran without internal error (ok == True)
-        # - and the printed output matches the expected output
-        passed = ok and (actual_output == expected_output)
+        # 4) Run tests (same logic as run_tests_view)
+        for test in tests:
+            test_input = test.get("input", "")
+            expected_output = (test.get("output", "") or "").strip()
 
-        # Save this test's result (for the frontend UI)
-        results.append(
+            ok, actual_output = run_python_code(user_code, test_input)
+            actual_output = (actual_output or "").strip()
+
+            passed = ok and (actual_output == expected_output)
+            results.append(
+                {
+                    "input": test_input,
+                    "expected": expected_output,
+                    "user_output": actual_output,
+                    "passed": passed,
+                }
+            )
+
+            if not passed:
+                all_passed = False
+
+        # 5) Set status + points_awarded
+        if all_passed:
+            submission.status = "passed"
+            submission.points_awarded = challenge.points
+        else:
+            submission.status = "failed"
+            submission.points_awarded = 0
+
+        submission.save()
+
+        # 6) Return JSON for JS
+        return JsonResponse(
             {
-                "input": test_input,
-                "expected": expected_output,
-                "user_output": actual_output,
-                "passed": passed,
+                "status": submission.status,
+                "results": results,
+                "submission_id": submission.id,
             }
         )
 
-        # If any test fails → overall result is failed
-        if not passed:
-            all_passed = False
-
-    # 7) Update the Submission status and points
-    if all_passed:
-        submission.status = "passed"
-        submission.points_awarded = challenge.points
-    else:
-        submission.status = "failed"
-        submission.points_awarded = 0
-
-    submission.save()  # write changes to the database
-
-    # 8) Send a JSON response back to the frontend
-    return JsonResponse(
-        {
-            "status": submission.status,
-            "results": results,
-            "submission_id": submission.id,
-        }
-    )
+    except Exception as e:
+        # Print full traceback in server console for you
+        print("ERROR in challenge_submit:\n", traceback.format_exc())
+        # And return the error as JSON so the frontend can show it
+        return JsonResponse(
+            {"error": f"Server error: {type(e).__name__}: {e}"},
+            status=500
+        )
 
 
 @require_POST
-def run_tests_view(request, slug):
-    challenge = get_object_or_404(Challenge, slug=slug)
-    user_code = request.POST.get("code", "")
+def run_tests_view(request, challenge_slug):
+    challenge = get_object_or_404(Challenge, slug=challenge_slug)
+    user_code = (request.POST.get("code") or "").strip()
     tests = challenge.hidden_tests or []
 
     results = []
@@ -500,7 +501,7 @@ def run_tests_view(request, slug):
             {
                 "input": test_input,
                 "expected": expected,
-                "output": output,
+                "user_output": output,
                 "passed": passed,
             }
         )
@@ -513,7 +514,6 @@ def run_tests_view(request, slug):
             "results": results,
         }
     )
-
 
 def run_python_code(user_code: str, test_input: str):
     """

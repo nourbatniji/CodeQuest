@@ -81,7 +81,7 @@
     <div style="display: flex; justify-content: space-between; align-items: start;">
         <div>
             <h1><i class="fas fa-code"></i> {{challenge.title}}</h1>
-            
+
         </div>
         <div style="display: flex; gap: 0.5rem; align-items: center;">
             <span class="badge-modern badge-easy">
@@ -92,18 +92,15 @@
             </a>
 
             {% if submission.status == "not_started" %}
-    <span class="badge badge-gray">Not Started</span>
+            <span class="badge badge-gray">Not Started</span>
 
-{% elif ch.status == "in_progress" %}
-    <span class="badge badge-yellow">In Progress</span>
+            {% elif ch.status == "in_progress" %}
+            <span class="badge badge-yellow">In Progress</span>
 
-{% elif ch.status == "passed" %}
-    <span class="badge badge-green">Passed</span>
-{% endif %}
+            {% elif ch.status == "passed" %}
+            <span class="badge badge-green">Passed</span>
+            {% endif %}
 
-
-
-            
         </div>
     </div>
 </div>
@@ -171,10 +168,10 @@
             </select>
         </div>
 
-        <form method="POST" action="/challenge/1/submit/">
+        <form method="POST" action="{% url 'challenge_submit' challenge.slug %}">
             {% csrf_token %}
             <textarea id="code-editor" class="code-editor" name="code" placeholder="Write your solution here..."
-            spellcheck="false">{{ challenge.starter_code }}
+                spellcheck="false">{{ challenge.starter_code }}
             </textarea>
             <div style="display: flex; gap: 1rem; margin-top: 1rem;">
                 <button id="submit-btn" type="submit" class="btn-modern btn-primary" style="flex: 1;">
@@ -209,35 +206,36 @@
     <h2><i class="fas fa-history"></i> Your Submissions</h2>
 </div>
 <!-- Submissions List -->
- 
-<div class="animate-fade-in" style="margin-bottom: 2rem;"  id="submission-list">
+
+<div class="animate-fade-in" style="margin-bottom: 2rem;" id="submission-list">
     {% for submission in submissions %}
     <div class="submission-item" data-id="{{ submission.id }}">
-    <div>
-        <div class="submission-header" style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">
-            Submission #{{ submission.id }}
+        <div>
+            <div class="submission-header"
+                style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">
+                Submission #{{ submission.id }}
+            </div>
+            <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                <i class="fas fa-clock"></i>{{ submission.created_at|timesince }} ago
+            </div>
         </div>
-        <div style="font-size: 0.875rem; color: var(--text-secondary);">
-            <i class="fas fa-clock"></i>{{ submission.created_at|timesince }} ago
+        <!-- submission code -->
+        <pre class="submission-code"><code class="language-python">{{ submission.code }}</code></pre>
+        <div style="display: flex; gap: 1rem; align-items: right;">
+            <span class="badge-modern" style="background-color: rgba(16, 185, 129, 0.1); color: var(--success);">
+                <i class="fas fa-check-circle"></i> {{ submission.status }}
+            </span>
+            <button class="view-code-btn btn-modern btn-secondary" style="padding: 0.5rem 1rem;">
+                <i class="fas fa-eye"></i> View Code
+            </button>
         </div>
     </div>
-     <!-- submission code -->
-    <pre class="submission-code"><code class="language-python">{{ submission.code }}</code></pre>
-    <div style="display: flex; gap: 1rem; align-items: right;">
-        <span class="badge-modern" style="background-color: rgba(16, 185, 129, 0.1); color: var(--success);">
-            <i class="fas fa-check-circle"></i> {{ submission.status }}
-        </span>
-        <button class="view-code-btn btn-modern btn-secondary" style="padding: 0.5rem 1rem;">
-            <i class="fas fa-eye"></i> View Code
-        </button>
-    </div>
-</div>
 
     {% empty %}
-    <div  id="no-submissions" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+    <div id="no-submissions" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
         No submissions yet
     </div>
-{% endfor %}
+    {% endfor %}
 </div>
 
 <!-- Discussions -->
@@ -254,13 +252,9 @@
                 <i class="fas fa-comment-dots"></i> Add a Comment
             </h4>
 
-            <textarea id="comment-input"
-                name="content"
-                class="form-control-modern"
-                rows="3"
-                placeholder="Ask a question or share a hint..."
-                style="width: 100%; margin-bottom: 1rem;"></textarea>
-        
+            <textarea id="comment-input" name="content" class="form-control-modern" rows="3"
+                placeholder="Ask a question or share a hint..." style="width: 100%; margin-bottom: 1rem;"></textarea>
+
             <button type="submit" id="send-comment-btn" class="btn-modern btn-primary">
                 <i class="fas fa-paper-plane"></i> Post Comment
             </button>
@@ -271,44 +265,27 @@
 <!-- Comments List -->
 <div id="comment-list" class="animate-fade-in">
     <h3>Comments</h3>
-    
+
     {% for comment in page_obj %}
-        <div class="comment-box" data-comment-id="{{ comment.id }}">
-            <p style="margin:0;">
-                <strong>{{ comment.user.username }}</strong>
-                <span style="color:var(--text-secondary); font-size:0.85rem;">
-                    • {{ comment.created_at|timesince }} ago
-                </span>
-            </p>
-            <p style="margin-top:0.5rem; color:var(--text-primary);">
-                {{ comment.content }}
-            </p>
-        </div>
+    <div class="comment-box" data-comment-id="{{ comment.id }}">
+        <p style="margin:0;">
+            <strong>{{ comment.user.username }}</strong>
+            <span style="color:var(--text-secondary); font-size:0.85rem;">
+                • {{ comment.created_at|timesince }} ago
+            </span>
+        </p>
+        <p style="margin-top:0.5rem; color:var(--text-primary);">
+            {{ comment.content }}
+        </p>
+    </div>
     {% empty %}
-        <div id="no-comments" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
-            <i class="fas fa-comment-slash fa-2x" style="margin-bottom: 1rem;"></i>
-            <p>No comments yet. Be the first to comment!</p>
-        </div>
+    <div id="no-comments" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+        <i class="fas fa-comment-slash fa-2x" style="margin-bottom: 1rem;"></i>
+        <p>No comments yet. Be the first to comment!</p>
+    </div>
     {% endfor %}
 
-    <!-- Pagination -->
-    <div class="pagination" style="margin-top:1rem; display:flex; gap:1rem;">
-        {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}" class="btn-modern btn-secondary">Previous</a>
-        {% else %}
-            <button disabled class="btn-modern btn-secondary">Previous</button>
-        {% endif %}
-
-        <span style="align-self:center; color:var(--text-primary);">
-            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-        </span>
-
-        {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}" class="btn-modern btn-secondary">Next</a>
-        {% else %}
-            <button disabled class="btn-modern btn-secondary">Next</button>
-        {% endif %}
-    </div>
+  
 </div>
 
 <div id="comment-list" class="animate-fade-in">
@@ -316,54 +293,13 @@
 </div>
 
 
-<!-- Comments List -->
-<div id="comment-list" class="animate-fade-in">
-    <h3>Comments</h3>
-
-    {% for comment in page_obj %}
-        <div class="comment-box">
-            <p style="margin:0;">
-                <strong>{{ comment.user.username }}</strong>
-                <span style="color:var(--text-secondary); font-size:0.85rem;">
-                    • {{ comment.created_at|timesince }} ago
-                </span>
-            </p>
-
-            <p style="margin-top:0.5rem; color:var(--text-primary);">
-                {{ comment.text }}
-            </p>
-        </div>
-    {% empty %}
-        <p style="color:var(--text-secondary);">No comments yet.</p>
-    {% endfor %}
-
-    <!-- Pagination -->
-    <div class="pagination" style="margin-top:1rem; display:flex; gap:1rem;">
-        {% if page_obj.has_previous %}
-            <a href="?page={{ page_obj.previous_page_number }}" class="btn-modern btn-secondary">Previous</a>
-        {% else %}
-            <button disabled class="btn-modern btn-secondary">Previous</button>
-        {% endif %}
-
-        <span style="align-self:center; color:var(--text-primary);">
-            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-        </span>
-
-        {% if page_obj.has_next %}
-            <a href="?page={{ page_obj.next_page_number }}" class="btn-modern btn-secondary">Next</a>
-        {% else %}
-            <button disabled class="btn-modern btn-secondary">Next</button>
-        {% endif %}
-    </div>
-</div>
-
 
 
 <!-- Hidden Tests Data -->
 {{ challenge.hidden_tests|json_script:"hidden-tests-data" }}
 {% endblock %}
 {% block scripts %}
-<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet" />
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
 <script src="{% static 'js/challenge_details.js' %}"></script>

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from .models import (
     Classroom, ClassroomMembership, Challenge, Submission, Comment,
-    Badge, UserBadge, Tag
+    Badge, UserBadge, Tag, Profile
 )
 
 # ---------- Classroom ----------
@@ -77,3 +77,4 @@ class UserBadgeAdmin(admin.ModelAdmin):
 
 admin.site.register(UserBadge, UserBadgeAdmin)
 admin.site.register(Tag)
+admin.site.register(Profile)
