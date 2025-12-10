@@ -282,35 +282,45 @@ def challenge_list(request):
     classrooms = Classroom.objects.all()
 
     difficulty = request.GET.get("difficulty")
-    classroom_id = request.GET.get("classroom")
-    tag_id = request.GET.get("tag")
+    classroom = request.GET.get("classroom")
+    tag = request.GET.get("tag")
+    search = request.GET.get("search", '')
 
-    try:
-        classroom_id = int(classroom_id)
-    except (TypeError, ValueError):
-        classroom_id = None
-
-    try:
-        tag_id = int(tag_id)
-    except (TypeError, ValueError):
-        tag_id = None
+    if search:
+        challenges = challenges.filter(title__icontains=search)
 
     if difficulty and difficulty != "all":
-        challenges = challenges.filter(difficulty__iexact=difficulty)
+        challenges = challenges.filter(difficulty=difficulty)
 
-    if classroom_id:
-        challenges = challenges.filter(classroom_id=classroom_id)
+    if classroom:
+        challenges = challenges.filter(classroom_id=classroom)
 
-    if tag_id:
-        challenges = challenges.filter(tags__id=tag_id)
+    if tag:
+        challenges = challenges.filter(tags__id=tag)
+
+    for ch in challenges:
+        user_submissions = ch.submissions.filter(user=request.user)
+
+        if not user_submissions.exists():
+            ch.status = 'not_started'
+
+        else:
+            latest = user_submissions.latest('created_at')
+            if latest.is_passed:
+                ch.status = 'passed'
+            else:
+                ch.status = 'in_progress'
+
+    
 
     context = {
         "challenges": challenges,
         "classrooms": classrooms,
         "tags": tags,
+        'search': search,
         "selected_difficulty": difficulty,
-        "selected_classroom": classroom_id,
-        "selected_tag": tag_id,
+        "selected_classroom": classroom,
+        "selected_tag": tag,
     }
 
     return render(request, "challenges.html", context)

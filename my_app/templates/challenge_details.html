@@ -90,6 +90,20 @@
             <a href="/classrooms/" class="btn-modern btn-secondary">
                 <i class="fas fa-arrow-left"></i> Back to Classroom
             </a>
+
+            {% if submission.status == "not_started" %}
+    <span class="badge badge-gray">Not Started</span>
+
+{% elif ch.status == "in_progress" %}
+    <span class="badge badge-yellow">In Progress</span>
+
+{% elif ch.status == "passed" %}
+    <span class="badge badge-green">Passed</span>
+{% endif %}
+
+
+
+            
         </div>
     </div>
 </div>
