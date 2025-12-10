@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+
 {% block title %}Classrooms - CodeQuest{% endblock %}
 
 {% block extra_css %}
@@ -34,12 +35,6 @@
 
 
 <!-- Classrooms Grid -->
-<div class="classroom-grid animate-fade-in" id="classrooms-container">
-    <!-- سيتم إنشاء البطاقات هنا ديناميكيًا -->
-</div>
-
-
-
 <div class="classroom-grid animate-fade-in">
     {% for c in classrooms %}
     <div class="classroom-card">
@@ -85,9 +80,6 @@
         <p>No classrooms yet. Ask a mentor to create one in the admin.</p>
     {% endfor %}
 </div>
-{% endblock %}
 
 
-{% block scripts %}
-<script src="{% static 'js/classrooms.js' %}"></script>
 {% endblock %}

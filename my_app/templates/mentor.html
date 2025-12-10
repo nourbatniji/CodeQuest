@@ -8,7 +8,6 @@
 {% endblock %}
 
 {% block content %}
-
 <!-- Mentor Dashboard Header -->
 <div class="dashboard-header animate-fade-in">
     <h1>Mentor Dashboard</h1>
@@ -18,22 +17,22 @@
 <!-- Quick Stats -->
 <div class="stats-grid animate-fade-in">
     <div class="stat-card">
-        <div id="mentor-classrooms-count" class="stat-card-value">0</div>
+        <div class="stat-card-value">3</div>
         <div class="stat-card-label">My Classrooms</div>
     </div>
 
     <div class="stat-card">
-        <div id="mentor-total-students" class="stat-card-value">0</div>
+        <div class="stat-card-value">135</div>
         <div class="stat-card-label">Total Students</div>
     </div>
 
     <div class="stat-card">
-        <div id="mentor-total-challenges" class="stat-card-value">0</div>
+        <div class="stat-card-value">47</div>
         <div class="stat-card-label">Total Challenges</div>
     </div>
 
     <div class="stat-card">
-        <div id="mentor-total-submissions" class="stat-card-value">0</div>
+        <div class="stat-card-value">892</div>
         <div class="stat-card-label">Submissions</div>
     </div>
 </div>
@@ -65,9 +64,84 @@
     </a>
 </div>
 
-<!-- ⚡ سكربت الـ polling سيملأ هذا -->
-<div id="classrooms-container" class="classroom-grid animate-fade-in">
-    <!-- Filled Automatically -->
+<div class="classroom-grid animate-fade-in">
+    <!-- Classroom Card 1 -->
+    <div class="classroom-card" onclick="window.location.href='/classroom/1'">
+        <div class="classroom-card-header">
+            <h3>Python Fundamentals</h3>
+        </div>
+        <div class="classroom-card-body">
+            <div class="classroom-meta">
+                <div class="classroom-meta-item">
+                    <i class="fas fa-users"></i>
+                    <span>45 students</span>
+                </div>
+                <div class="classroom-meta-item">
+                    <i class="fas fa-code"></i>
+                    <span>12 challenges</span>
+                </div>
+            </div>
+            <div class="classroom-meta">
+                <div class="classroom-meta-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>234 submissions</span>
+                </div>
+                <div class="classroom-meta-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>67% avg completion</span>
+                </div>
+            </div>
+        </div>
+        <div class="classroom-card-footer">
+            <span style="font-size: 0.875rem; color: var(--text-secondary);">
+                <i class="fas fa-clock"></i> Active
+            </span>
+            <button class="btn-modern btn-primary"
+                onclick="event.stopPropagation(); window.location.href='/classroom/1'">
+                <i class="fas fa-eye"></i> View
+            </button>
+        </div>
+    </div>
+
+    <!-- Classroom Card 2 -->
+    <div class="classroom-card" onclick="window.location.href='/classroom/2'">
+        <div class="classroom-card-header">
+            <h3>Data Structures & Algorithms</h3>
+        </div>
+        <div class="classroom-card-body">
+            <div class="classroom-meta">
+                <div class="classroom-meta-item">
+                    <i class="fas fa-users"></i>
+                    <span>38 students</span>
+                </div>
+                <div class="classroom-meta-item">
+                    <i class="fas fa-code"></i>
+                    <span>20 challenges</span>
+                </div>
+            </div>
+            <div class="classroom-meta">
+                <div class="classroom-meta-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>412 submissions</span>
+                </div>
+                <div class="classroom-meta-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>54% avg completion</span>
+                </div>
+            </div>
+        </div>
+        <div class="classroom-card-footer">
+            <span style="font-size: 0.875rem; color: var(--text-secondary);">
+                <i class="fas fa-clock"></i> Active
+            </span>
+            <button class="btn-modern btn-primary"
+                onclick="event.stopPropagation(); window.location.href='/classroom/2'">
+                <i class="fas fa-eye"></i> View
+            </button>
+        </div>
+    </div>
+
+   
 </div>
 
 <!-- Recent Activity -->
@@ -75,12 +149,4 @@
     <h2><i class="fas fa-history"></i> Recent Submissions</h2>
 </div>
 
-<!-- ⚡ سيتم تعبئته تلقائيًا -->
-<div id="recent-submissions-container" class="recent-submissions animate-fade-in">
-    <!-- Filled Automatically -->
-</div>
-
-{% endblock %}
-{% block scripts %}
-<script src="{% static 'js/mentor.js' %}"></script>
 {% endblock %}
