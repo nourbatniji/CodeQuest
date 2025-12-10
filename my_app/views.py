@@ -8,6 +8,9 @@ from .decorators import staff_or_superuser_required
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.utils import timezone
 from datetime import timedelta
+from django.views import View
+from django.core.paginator import Paginator
+from .models import Comment
 
 
 def index(request):
@@ -291,15 +294,54 @@ def challenge_list(request):
 
     return render(request, "challenges.html", context)
 
+class AddCommentView(View):
+    def post(self, request, challenge_id, challenge_slug):
+        if not request.user.is_authenticated:
+            return redirect('login')
 
+        challenge = get_object_or_404(Challenge, id=challenge_id, slug=challenge_slug)
 
-def challenge_detail(request,slug):
-    if not request.user.is_authenticated:
-        return render(request, 'not_found.html')
-    challenge = get_object_or_404(models.Challenge, slug=slug)
-    submissions = challenge.submissions.filter(user=request.user).order_by('-created_at')
-    comments = challenge.comments.all().order_by('-created_at')
-    context={"challenge": challenge,
+        text = request.POST.get("text")
+        parent_id = request.POST.get("parent_id")  # reply
+
+        if not text.strip():
+            return redirect(request.META.get("HTTP_REFERER"))
+
+        parent = None
+        if parent_id:
+            parent = Comment.objects.filter(id=parent_id).first()
+
+        Comment.objects.create(
+            challenge=challenge,
+            user=request.user,
+            text=text,
+            parent=parent
+        )
+
+        return redirect('challenge_detail', challenge_id=challenge.id, challenge_slug=challenge.slug)
+    
+
+class ChallengeDetailView(View):
+    def get(self, request, challenge_id, challenge_slug):
+        if not request.user.is_authenticated:
+            return render(request, 'not_found.html')
+
+        challenge = get_object_or_404(Challenge, id=challenge_id, slug=challenge_slug)
+
+        #submissions
+        submissions = challenge.submissions.filter(user=request.user).order_by('-created_at')
+
+        #(parent is null)
+        root_comments = challenge.comments.filter(parent__isnull=True).order_by('-created_at')
+
+        # Pagination (5 comments per page)
+        paginator = Paginator(root_comments, 5)
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+
+        context = {
+            "challenge": challenge,
             "submissions": submissions,
-            "comments": comments}
-    return render(request, 'challenge_details.html',context)
+            "page_obj": page_obj,    
+        }
+        return render(request, 'challenges/challenge_details.html', context)

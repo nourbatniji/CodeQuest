@@ -215,10 +215,20 @@ class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
     challenge = models.ForeignKey(Challenge, on_delete=models.CASCADE, related_name="comments")
     content = models.TextField()
+    parent = models.ForeignKey(
+        'self',
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='replies'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
 
     def __str__(self):
-        return f"Comment by {self.user}"
+        return f"Comment by {self.user.username}"
 
 
 class Badge(models.Model):

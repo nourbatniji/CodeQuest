@@ -13,8 +13,9 @@ urlpatterns = [
     path('dashboard/', views.dashboard),
 
     path("challenges/", views.challenge_list, name="challenge_list"),
-    path("challenge/<slug:slug>/", views.challenge_detail, name="challenge_detail"),
-    
+    path('challenge/<int:challenge_id>/<slug:challenge_slug>/',views.ChallengeDetailView.as_view(),name='challenge_detail'),
+    path('challenge/<int:challenge_id>/<slug:challenge_slug>/comment/',views.AddCommentView.as_view(),name="add_comment"),
+
     path('leaderboard/', views.leaderboard_page),
     path('profile/', views.profile_page),
     path('mentor_dashboard/', views.mentor_dashboard),
