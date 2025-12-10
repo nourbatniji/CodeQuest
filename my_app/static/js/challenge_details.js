@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", function () {
         spinner.style.display = "inline-block";
         btnText.textContent = "Submitting...";
 
-        //❗ 2-second industrial delay for spinner viewing
+        // 2-second industrial delay for spinner viewing
         await new Promise(resolve => setTimeout(resolve, 5000));
 
         try {
@@ -93,12 +93,15 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
-//using Judge0 CE API 
+// Calls Judge0 once with given stdin, returns the result JSON
 async function runCode(stdin = "") {
+    // 1) Get the code from textarea
     const code = document.getElementById("code-editor").value;
+
+    // 2) Get selected language from dropdown
     const language = document.querySelector("select.filter-select").value;
 
-    // Specify the language number at Judge0
+    // 3) Map language name -> Judge0 language_id
     const languageIds = {
         python: 71,
         javascript: 63,
@@ -108,99 +111,146 @@ async function runCode(stdin = "") {
 
     const selectedLanguageId = languageIds[language];
 
-    // Data to be sent to Judge0
+    // 4) Prepare the body we send to Judge0
     const payload = {
-        source_code: code,
+        source_code: code,            // user code
         language_id: selectedLanguageId,
-        stdin: stdin
+        stdin: stdin                  // 🚨 THIS is the input() data
     };
 
-    // Send the first request to create submission
-    const createResponse = await fetch("https://ce.judge0.com/submissions/?base64_encoded=false&wait=false", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-    });
+    // 5) First request: create submission
+    const createResponse = await fetch(
+        "https://ce.judge0.com/submissions/?base64_encoded=false&wait=false",
+        {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        }
+    );
 
     const createData = await createResponse.json();
+    const token = createData.token;   // Judge0 id for this run
 
-    const token = createData.token;
-
-    //Waiting for execution (Polling)
+    // 6) Poll Judge0 until code finishes running
     let result;
     while (true) {
-        const getResponse = await fetch(`https://ce.judge0.com/submissions/${token}?base64_encoded=false`);
+        const getResponse = await fetch(
+            `https://ce.judge0.com/submissions/${token}?base64_encoded=false`
+        );
         const getData = await getResponse.json();
 
         if (getData.status && getData.status.id >= 3) {
+            // 3 = finished, 4 = wrong answer, 5 = time limit, etc.
             result = getData;
             break;
         }
 
+        // wait 0.5s before checking again
         await new Promise(resolve => setTimeout(resolve, 500));
     }
 
-    return result;
+    return result;   // contains stdout, stderr, compile_output, status, ...
 }
+
 
 //run test script
 function delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+
 async function runTests(button) {
     const spinner = button.querySelector('.spinner');
-    spinner.style.display = 'inline-block';
-
-    // Optional: render "Running..."
     const resultsDiv = document.getElementById("test-results");
-    resultsDiv.innerHTML = `<p style="color: yellow;">Running code...</p>`;
+    spinner.style.display = 'inline-block';
+    resultsDiv.innerHTML = `<p style="color: var(--text-secondary);">Running tests...</p>`;
 
-    // Allow spinner to show
-    await new Promise(res => setTimeout(res, 100));
+    // 1) Read hidden tests from JSON script tag
+    const hiddenTestsScript = document.getElementById("hidden-tests-data");
+    let tests = [];
+    if (hiddenTestsScript) {
+        try {
+            tests = JSON.parse(hiddenTestsScript.textContent) || [];
+        } catch (e) {
+            console.error("Error parsing hidden tests JSON:", e);
+        }
+    }
 
-    let result;
-    try {
-        result = await runCode();
-    } catch (err) {
-        resultsDiv.innerHTML = `<p style="color:red;">Error running tests: ${err}</p>`;
+    if (!tests || tests.length === 0) {
+        resultsDiv.innerHTML = `<p style="color:red;">No tests configured for this challenge.</p>`;
         spinner.style.display = 'none';
+        lastTestStatus = "failed";
         return;
     }
 
-    // Safely extract output
-    const output = 
-        result?.stdout ??
-        result?.stderr ??
-        result?.compile_output ??
-        "No output";
+    let allPassed = true;
+    let html = "";
 
-    // Determine status
-    let status = "failed";
+    // 2) Run user code once per test
+    for (let i = 0; i < tests.length; i++) {
+        const t = tests[i];
 
-    if (result.compile_output && result.compile_output.trim() !== "") {
-        status = "failed";
-    } else if (result.stderr && result.stderr.trim() !== "") {
-        status = "failed";
-    } else if (result.stdout && result.stdout.trim() !== "") {
-        status = "passed";
-    } else {
-        status = "failed";
+        // test.input and test.output come directly from DB
+        const stdin = t.input || "";
+        const expected = (t.output || "").trim();   // what we expect user to print
+
+        let judgeResult;
+        try {
+            judgeResult = await runCode(stdin);      // 👈 send stdin to Judge0
+        } catch (err) {
+            allPassed = false;
+            html += `
+                <div style="padding:0.75rem; margin-bottom:0.75rem; border:1px solid #e11d48;">
+                    <strong>Test ${i + 1} – ❌ Error calling Judge0</strong><br>
+                    <pre>${err}</pre>
+                </div>
+            `;
+            continue;
+        }
+
+        // 3) Extract what the program printed
+        const stdout = (judgeResult.stdout || "").trim();
+        const stderr = (judgeResult.stderr || "").trim();
+        const compileOutput = (judgeResult.compile_output || "").trim();
+
+        let kind = "ok";
+        let actual = stdout;
+
+        if (compileOutput) {
+            kind = "compile_error";
+            actual = compileOutput;
+        } else if (stderr) {
+            kind = "runtime_error";
+            actual = stderr;
+        }
+
+        const passed = (kind === "ok" && actual === expected);
+        if (!passed) allPassed = false;
+
+        // 4) Build HTML for this test
+        html += `
+            <div style="padding:0.75rem; margin-bottom:0.75rem; border:1px solid ${passed ? '#16a34a' : '#e11d48'}; border-radius:8px;">
+                <strong>Test ${i + 1} – ${passed ? "✅ Passed" : "❌ Failed"}</strong><br>
+                <strong>Input:</strong>
+                <pre>${stdin}</pre>
+                <strong>Expected output:</strong>
+                <pre>${expected}</pre>
+                <strong>Your output (${kind}):</strong>
+                <pre>${actual}</pre>
+            </div>
+        `;
     }
 
-    lastTestStatus = status;
-    // console.log("Status updated to:", status);
-    
+    lastTestStatus = allPassed ? "passed" : "failed";
+
     resultsDiv.innerHTML = `
-        <div style="padding: 1rem; background: rgba(99, 102, 241, 0.1); border-radius: 8px;">
-            <strong>Status:</strong> ${status} <br>
-            <strong>Result:</strong>
-            <pre>${output}</pre>
+        <div style="margin-bottom:1rem;">
+            <strong>Overall status:</strong> ${allPassed ? "✅ passed" : "❌ failed"}
         </div>
+        ${html}
     `;
 
     spinner.style.display = 'none';
-
 }
 
 
