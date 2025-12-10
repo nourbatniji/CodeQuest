@@ -232,25 +232,75 @@
 </div>
 
 <div class="animate-fade-in">
-    <!-- Comment Form -->
-    <div class="card-modern" style="margin-bottom: 1.5rem;">
-        <h4 style="margin-bottom: 1rem; color: var(--text-primary);">
-            <i class="fas fa-comment-dots"></i> Add a Comment
-        </h4>
+    <!-- التأكد من أن الـ form يحتوي على الـ action الصحيح -->
+    <form id="comment-form" method="POST" action="{% url 'add_comment' challenge.slug %}">
+        {% csrf_token %}
+        <div class="card-modern" style="margin-bottom: 1.5rem;">
+            <h4 style="margin-bottom: 1rem; color: var(--text-primary);">
+                <i class="fas fa-comment-dots"></i> Add a Comment
+            </h4>
 
-        <!-- Updated form to use the comment endpoint -->
-        <form method="POST" action="{% url 'add_comment' challenge.slug %}">
-            {% csrf_token %}
-            <textarea class="form-control-modern" name="text" rows="3"
-                placeholder="Ask a question or share a hint..." 
-                style="width: 100%; margin-bottom: 1rem;" required></textarea>
-
-            <button type="submit" class="btn-modern btn-primary">
+            <textarea id="comment-input"
+                name="content"
+                class="form-control-modern"
+                rows="3"
+                placeholder="Ask a question or share a hint..."
+                style="width: 100%; margin-bottom: 1rem;"></textarea>
+        
+            <button type="submit" id="send-comment-btn" class="btn-modern btn-primary">
                 <i class="fas fa-paper-plane"></i> Post Comment
             </button>
-        </form>
+        </div>
+    </form>
+</div>
+
+<!-- Comments List -->
+<div id="comment-list" class="animate-fade-in">
+    <h3>Comments</h3>
+    
+    {% for comment in page_obj %}
+        <div class="comment-box" data-comment-id="{{ comment.id }}">
+            <p style="margin:0;">
+                <strong>{{ comment.user.username }}</strong>
+                <span style="color:var(--text-secondary); font-size:0.85rem;">
+                    • {{ comment.created_at|timesince }} ago
+                </span>
+            </p>
+            <p style="margin-top:0.5rem; color:var(--text-primary);">
+                {{ comment.content }}
+            </p>
+        </div>
+    {% empty %}
+        <div id="no-comments" style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+            <i class="fas fa-comment-slash fa-2x" style="margin-bottom: 1rem;"></i>
+            <p>No comments yet. Be the first to comment!</p>
+        </div>
+    {% endfor %}
+
+    <!-- Pagination -->
+    <div class="pagination" style="margin-top:1rem; display:flex; gap:1rem;">
+        {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="btn-modern btn-secondary">Previous</a>
+        {% else %}
+            <button disabled class="btn-modern btn-secondary">Previous</button>
+        {% endif %}
+
+        <span style="align-self:center; color:var(--text-primary);">
+            Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="btn-modern btn-secondary">Next</a>
+        {% else %}
+            <button disabled class="btn-modern btn-secondary">Next</button>
+        {% endif %}
     </div>
 </div>
+
+<div id="comment-list" class="animate-fade-in">
+    <!-- التعليقات ستُضاف هنا -->
+</div>
+
 
 <!-- Comments List -->
 <div id="comment-list" class="animate-fade-in">

@@ -423,3 +423,218 @@ document.addEventListener("DOMContentLoaded", function () {
     // Load first page
     loadComments();
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+    const commentForm = document.getElementById("comment-form");
+    const commentInput = document.getElementById("comment-input");
+    const commentList = document.getElementById("comment-list");
+
+    if (!commentForm) {
+        console.error("Comment form not found!");
+        return;
+    }
+
+    commentForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const text = commentInput.value.trim();
+        if (!text) {
+            showNotification("Please enter a comment", "error");
+            return;
+        }
+
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // عرض حالة التحميل
+        const submitBtn = document.getElementById("send-comment-btn");
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Posting...';
+        submitBtn.disabled = true;
+
+        try {
+            console.log("Sending comment to:", commentForm.action);
+            
+            const response = await fetch(commentForm.action, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken,
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: JSON.stringify({ content: text })
+            });
+
+            console.log("Response status:", response.status);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log("Response data:", data);
+            
+            if (data.success && data.comment) {
+                // نجاح - أضف التعليق بدون إعادة تحميل الصفحة
+                
+                // إزالة رسالة "لا توجد تعليقات" إذا كانت موجودة
+                const noCommentsMsg = document.getElementById("no-comments");
+                if (noCommentsMsg) {
+                    noCommentsMsg.remove();
+                }
+
+                // إنشاء عنصر التعليق الجديد
+                const commentDiv = createCommentElement(data.comment);
+                
+                // إضافة التعليق في البداية
+                addCommentToDOM(commentDiv);
+                
+                // تفريغ حقل الإدخال
+                commentInput.value = "";
+
+                // عرض رسالة نجاح
+                showNotification("Comment posted successfully!", "success");
+                
+            } else {
+                // فشل - عرض رسالة الخطأ
+                showNotification(data.error || "Failed to post comment", "error");
+            }
+        } catch (err) {
+            console.error("Error posting comment:", err);
+            showNotification("An error occurred. Please try again.", "error");
+        } finally {
+            // إعادة زر الإرسال إلى حالته الأصلية
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    });
+
+    // دالة لإنشاء عنصر التعليق
+    function createCommentElement(commentData) {
+        const escapeHTML = (str) => {
+            if (!str) return "";
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        };
+
+        const commentDiv = document.createElement("div");
+        commentDiv.className = "comment-box";
+        commentDiv.setAttribute("data-comment-id", commentData.id);
+        commentDiv.innerHTML = `
+            <p style="margin:0;">
+                <strong>${escapeHTML(commentData.user)}</strong>
+                <span style="color:var(--text-secondary); font-size:0.85rem;">
+                    • just now
+                </span>
+            </p>
+            <p style="margin-top:0.5rem; color:var(--text-primary);">
+                ${escapeHTML(commentData.content)}
+            </p>
+        `;
+        
+        return commentDiv;
+    }
+
+    // دالة لإضافة التعليق إلى DOM
+    function addCommentToDOM(commentElement) {
+        if (!commentList) {
+            console.error("Comment list not found!");
+            return;
+        }
+
+        // البحث عن قسم التعليقات أو العنصر الأول
+        const commentsContainer = document.querySelector("#comment-list");
+        if (!commentsContainer) {
+            console.error("Comments container not found!");
+            return;
+        }
+
+        // البحث عن أول تعليق موجود
+        const firstComment = commentsContainer.querySelector('.comment-box');
+        const pagination = commentsContainer.querySelector('.pagination');
+        
+        if (firstComment) {
+            // أضف قبل أول تعليق موجود
+            commentsContainer.insertBefore(commentElement, firstComment);
+        } else if (pagination) {
+            // أضف قبل الـ pagination إذا لم يكن هناك تعليقات
+            commentsContainer.insertBefore(commentElement, pagination);
+        } else {
+            // أضف في النهاية
+            commentsContainer.appendChild(commentElement);
+        }
+    }
+
+    // دالة لعرض الإشعارات
+    function showNotification(message, type = "success") {
+        // إزالة أي إشعارات سابقة
+        const existingNotification = document.querySelector('.custom-notification');
+        if (existingNotification) {
+            existingNotification.remove();
+        }
+
+        const notification = document.createElement("div");
+        notification.className = "custom-notification";
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: ${type === "success" ? "#10b981" : "#ef4444"};
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 10000;
+            animation: slideIn 0.3s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+        `;
+        
+        notification.innerHTML = `
+            <i class="fas ${type === "success" ? "fa-check-circle" : "fa-exclamation-circle"}"></i>
+            <span>${message}</span>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // إزالة الإشعار بعد 3 ثواني
+        setTimeout(() => {
+            notification.style.animation = "slideOut 0.3s ease-out";
+            setTimeout(() => notification.remove(), 300);
+        }, 3000);
+    }
+
+    // أضف الـ CSS للـ animation إذا لم يكن موجوداً
+    if (!document.querySelector('#notification-styles')) {
+        const style = document.createElement("style");
+        style.id = "notification-styles";
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    }
+});
+

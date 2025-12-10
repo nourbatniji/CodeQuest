@@ -20,6 +20,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.views import View
 from django.core.paginator import Paginator
+import json
 
 
 def index(request):
@@ -318,21 +319,49 @@ def challenge_list(request):
 class AddCommentView(View):
     def post(self, request, challenge_slug):
         if not request.user.is_authenticated:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'error': 'Authentication required'}, status=401)
             return redirect("login")
 
         challenge = get_object_or_404(Challenge, slug=challenge_slug)
 
-        content = (request.POST.get("content") or "").strip()
+        # تحقق مما إذا كان الطلب AJAX أم لا
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            # AJAX request - معالجة JSON
+            try:
+                data = json.loads(request.body)
+                content = data.get('content', '').strip()
+            except json.JSONDecodeError:
+                return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        else:
+            # Regular form submission
+            content = request.POST.get("content", "").strip()
+
         if not content:
-            # nothing written, just reload the page
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'error': 'Comment cannot be empty'}, status=400)
             return redirect("challenge_detail", challenge_slug=challenge.slug)
 
-        Comment.objects.create(
+        # إنشاء التعليق
+        comment = Comment.objects.create(
             challenge=challenge,
             user=request.user,
             content=content,
         )
 
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            # رد JSON للـ AJAX
+            return JsonResponse({
+                'success': True,
+                'comment': {
+                    'id': comment.id,
+                    'user': request.user.username,
+                    'content': comment.content,
+                    'created_at': comment.created_at.isoformat(),
+                }
+            })
+        
+        # Regular request - إعادة توجيه
         return redirect("challenge_detail", challenge_slug=challenge.slug)
 
 class ChallengeDetailView(View):
