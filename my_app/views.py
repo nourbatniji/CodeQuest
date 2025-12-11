@@ -27,7 +27,7 @@ from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import Group
+
 
 
 def index(request):
@@ -307,10 +307,104 @@ def mentor_dashboard(request):
 
 
 
+# --------------- CHALLENGES ---------------
+@login_required
+@require_POST
+def mentor_edit_challenge(request, challenge_slug):
+    challenge = get_object_or_404(Challenge, slug=challenge_slug)
+    classroom = challenge.classroom
+
+    # permission: only classroom mentor, staff, or superuser
+    if classroom.mentor != request.user and not (request.user.is_staff or request.user.is_superuser):
+        messages.error(request, "You are not allowed to edit this challenge.")
+        return redirect("classroom_detail", classroom.slug)
+
+    title = request.POST.get("title", "").strip()
+    description = request.POST.get("description", "").strip()
+    points = request.POST.get("points", str(challenge.points)).strip()
+    difficulty = request.POST.get("difficulty", challenge.difficulty)
+    input_desc = request.POST.get("input_description", "").strip()
+    output_desc = request.POST.get("output_description", "").strip()
+    sample_input = request.POST.get("sample_input", "").strip()
+    sample_output = request.POST.get("sample_output", "").strip()
+    constraints = request.POST.get("constraints", "").strip()
+    starter_code = request.POST.get("starter_code", "").strip()
+
+    if not title or not description:
+        messages.error(request, "Title and description are required.")
+        return redirect("classroom_detail", classroom.slug)
+
+    try:
+        points = int(points)
+    except ValueError:
+        points = challenge.points
+
+    challenge.title = title
+    challenge.description = description
+    challenge.points = points
+    challenge.difficulty = difficulty
+    challenge.input_description = input_desc
+    challenge.output_description = output_desc
+    challenge.sample_input = sample_input
+    challenge.sample_output = sample_output
+    challenge.constraints = constraints
+    challenge.starter_code = starter_code
+    challenge.save()
+
+    messages.success(request, "Challenge updated successfully.")
+    return redirect("classroom_detail", classroom.slug)
+
+
+
+@require_POST
+def mentor_create_challenge(request, classroom_slug):
+    classroom = get_object_or_404(Classroom, slug=classroom_slug)
+
+    # Only classroom mentor / staff can create
+    if classroom.mentor != request.user and not (request.user.is_staff or request.user.is_superuser):
+        messages.error(request, "You are not allowed to create challenges for this classroom.")
+        return redirect("classroom_detail", classroom.id, classroom.slug)
+
+    title = request.POST.get("title", "").strip()
+    description = request.POST.get("description", "").strip()
+    points = request.POST.get("points", "10").strip()
+    difficulty = request.POST.get("difficulty", "easy")
+    input_desc = request.POST.get("input_description", "").strip()
+    output_desc = request.POST.get("output_description", "").strip()
+    sample_input = request.POST.get("sample_input", "").strip()
+    sample_output = request.POST.get("sample_output", "").strip()
+    constraints = request.POST.get("constraints", "").strip()
+    starter_code = request.POST.get("starter_code", "").strip()
+
+    if not title or not description:
+        messages.error(request, "Title and description are required.")
+        return redirect("classroom_detail", classroom.id, classroom.slug)
+
+    try:
+        points = int(points)
+    except ValueError:
+        points = 10
+
+    Challenge.objects.create(
+        classroom=classroom,
+        title=title,
+        description=description,
+        points=points,
+        difficulty=difficulty,
+        input_description=input_desc,
+        output_description=output_desc,
+        sample_input=sample_input,
+        sample_output=sample_output,
+        constraints=constraints,
+        starter_code=starter_code,
+        # hidden_tests uses default
+    )
+
+    messages.success(request, "Challenge created successfully.")
+    return redirect("classroom_detail", classroom.slug)
+
 
 # --------------- CLASSROOMS ---------------
-
-
 @login_required
 def mentor_create_classroom(request):
     # Only allow POST
@@ -339,7 +433,7 @@ def mentor_create_classroom(request):
     )
 
     messages.success(request, "Classroom created successfully.")
-    return redirect("mentor_dashboard")
+    return redirect("classrooms_page")
 
 def classrooms_page(request):
     if not request.user.is_authenticated:
