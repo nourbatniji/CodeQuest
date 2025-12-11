@@ -6,7 +6,7 @@
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'css/leaderboard.css' %}">
-{% endblock %}
+{% endblock extra_css %}
 
 {% block content %}
 <!-- Classroom Header -->
@@ -19,9 +19,11 @@
         <div style="display: flex; gap: 0.5rem;">
             {% if user.is_staff %}
             <!-- Mentor Actions -->
-            <button class="btn-modern btn-primary">
+            <button type="button" class="btn-modern btn-primary" onclick="openCreateChallengeModal()">
                 <i class="fas fa-plus"></i> Add Challenge
             </button>
+
+
             <button class="btn-modern btn-secondary">
                 <i class="fas fa-cog"></i> Settings
             </button>
@@ -64,7 +66,6 @@
         </div>
         <div class="stat-card-value">{{ classroom.mentor.username }}</div>
         <div class="stat-card-label">Instructor</div>
-
     </div>
 
     <div class="stat-card">
@@ -114,7 +115,7 @@
     {% endif %}
 </div>
 
-<!-- <div class="card-modern animate-fade-in" style="margin-bottom: 2rem;">
+<div class="card-modern animate-fade-in" style="margin-bottom: 2rem;">
     <div
         style="display: flex; align-items: start; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
         <div style="flex: 1;">
@@ -131,7 +132,7 @@
         Welcome everyone! We'll be covering Python basics, data structures, and algorithms. Make sure to complete all
         challenges and participate in discussions. Good luck!
     </p>
-</div> -->
+</div>
 
 <!-- Challenges List -->
 <div class="section-header">
@@ -145,6 +146,7 @@
     {% for item in challenge_entries %}
     {% with challenge=item.challenge status=item.status %}
     <div class="challenge-item" onclick="window.location.href='{% url 'challenge_detail' challenge.slug %}'">
+
         <div class="challenge-info">
             <div class="challenge-title">{{ challenge.title }}</div>
             <div class="challenge-meta">
@@ -164,20 +166,29 @@
 
         <div class="challenge-actions">
             {% if user.is_staff %}
-            <!-- Mentor View: Show completion stats and management buttons -->
+            <!-- Mentor View: completion + management buttons -->
             <span class="badge-modern badge-success">
-                <i class="fas fa-users"></i> {{ item.completed_count|default:0 }}/{{ members_count }} Completed
+                <i class="fas fa-users"></i>
+                {{ item.completed_count|default:0 }}/{{ members_count }} Completed
             </span>
-            <button class="btn-modern btn-secondary" style="padding: 0.5rem 1rem;" onclick="event.stopPropagation();">
+
+            <!-- Edit: open modal -->
+            <button type="button" class="btn-modern btn-secondary"
+                onclick="event.stopPropagation(); openEditModal('{{ challenge.slug }}')">
                 <i class="fas fa-edit"></i> Edit
             </button>
-            <button class="btn-modern"
-                style="padding: 0.5rem 1rem; background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid var(--error);"
-                onclick="event.stopPropagation();">
-                <i class="fas fa-trash"></i>
-            </button>
+
+            <!-- Delete: simple POST with confirm -->
+            <form method="POST" action="{% url 'mentor_delete_challenge' challenge.slug %}" style="display:inline;"
+                onsubmit="event.stopPropagation(); return confirm('Delete this challenge?');">
+                {% csrf_token %}
+                <button type="submit" class="btn-modern"
+                    style="padding: 0.5rem 1rem; background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid var(--error);">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </form>
             {% else %}
-            <!-- Student View: Show status and action buttons -->
+            <!-- Student View: status + start/continue/view -->
             {% if status == "passed" %}
             <span class="badge-modern" style="background-color: rgba(16, 185, 129, 0.1); color: var(--success);">
                 <i class="fas fa-check-circle"></i> Passed
@@ -217,12 +228,14 @@
             {% endif %}
         </div>
     </div>
+
+
+
     {% endwith %}
     {% empty %}
     <p>No challenges in this classroom yet.</p>
     {% endfor %}
 </div>
-
 
 <div class="row">
     <div class="col-md-8">
@@ -279,9 +292,172 @@
                         <td></td>
                         <td class="points-cell"></td>
                     </tr>
-
                 </tbody>
             </table>
         </div>
+    </div>
+</div>
 
-        {% endblock %}
+
+
+
+<!-- CREATE CHALLENGE MODAL -->
+
+<!-- CREATE CHALLENGE MODAL -->
+<div id="openCreateChallengeModal" style="
+        display:none;
+        position:fixed;
+        top:0; left:0;
+        width:100%; height:100%;
+        background:rgba(0,0,0,0.5);
+        z-index:2000;
+        align-items:center;
+        justify-content:center;
+     ">
+
+    <div style="
+        background:var(--surface);
+        padding:2rem;
+        border-radius:var(--radius-lg);
+        width:95%;
+        max-width:700px;
+        box-shadow:var(--shadow-lg);
+    ">
+
+        <!-- Header -->
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem;">
+            <h2 style="margin:0; color:var(--text-primary);">
+                <i class="fas fa-plus-circle"></i> Create Challenge
+            </h2>
+
+            <button type="button" onclick="closeCreateChallengeModal()" style="
+                        border:none;
+                        background:none;
+                        font-size:1.6rem;
+                        cursor:pointer;
+                        color:var(--text-secondary);
+                    ">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Form -->
+        <form method="POST" action="{% url 'mentor_create_challenge' classroom.slug %}">
+            {% csrf_token %}
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+
+                <!-- LEFT COLUMN -->
+                <div>
+                    <!-- title -->
+                    <label class="form-label-modern">Title</label>
+                    <input type="text" name="title" class="form-control-modern"
+                           placeholder="e.g. Two Sum" required>
+
+                    <!-- points -->
+                    <label class="form-label-modern">Points</label>
+                    <input type="number" name="points" class="form-control-modern"
+                           min="0" value="10" required>
+
+                    <!-- difficulty -->
+                    <label class="form-label-modern">Difficulty</label>
+                    <select name="difficulty" class="form-control-modern">
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+
+                    <!-- description -->
+                    <label class="form-label-modern">Description</label>
+                    <textarea name="description" class="form-control-modern" rows="4"
+                              placeholder="Describe the problem statement..." required></textarea>
+                </div>
+
+                <!-- RIGHT COLUMN -->
+                <div>
+                    <!-- input_description -->
+                    <label class="form-label-modern">Input Description</label>
+                    <textarea name="input_description" class="form-control-modern" rows="2"
+                              placeholder="Explain the input format..."></textarea>
+
+                    <!-- output_description -->
+                    <label class="form-label-modern">Output Description</label>
+                    <textarea name="output_description" class="form-control-modern" rows="2"
+                              placeholder="Explain the output format..."></textarea>
+
+                    <!-- sample_input -->
+                    <label class="form-label-modern">Sample Input</label>
+                    <textarea name="sample_input" class="form-control-modern" rows="2"
+                              placeholder="e.g.&#10;2 3"></textarea>
+
+                    <!-- sample_output -->
+                    <label class="form-label-modern">Sample Output</label>
+                    <textarea name="sample_output" class="form-control-modern" rows="2"
+                              placeholder="e.g.&#10;5"></textarea>
+                </div>
+            </div>
+
+            <!-- example_explanation -->
+            <label class="form-label-modern" style="margin-top:1rem;">Example Explanation</label>
+            <textarea name="example_explanation" class="form-control-modern" rows="3"
+                      placeholder="Optional explanation of the sample input/output..."></textarea>
+
+            <!-- starter_code -->
+            <label class="form-label-modern" style="margin-top:1rem;">Starter Code</label>
+            <textarea name="starter_code" class="form-control-modern" rows="3"
+                      placeholder="Optional starter code for students..."></textarea>
+
+            <!-- constraints -->
+            <label class="form-label-modern" style="margin-top:1rem;">Constraints</label>
+            <textarea name="constraints" class="form-control-modern" rows="2"
+                      placeholder="e.g. 1 ≤ n ≤ 10^5"></textarea>
+
+            <!-- hidden_tests (JSON) -->
+            <label class="form-label-modern" style="margin-top:1rem;">Hidden Tests (JSON)</label>
+            <textarea name="hidden_tests" class="form-control-modern" rows="3"
+                      placeholder='Example: [{"input": "2 3", "output": "5"}]'></textarea>
+
+            <!-- Buttons -->
+            <div style="display:flex; justify-content:flex-end; margin-top:1.5rem; gap:1rem;">
+                <button type="button" class="btn-modern btn-secondary" onclick="closeCreateChallengeModal()">
+                    Cancel
+                </button>
+
+                <button type="submit" class="btn-modern btn-primary">
+                    <i class="fas fa-check"></i> Create
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+
+<script>
+    function openCreateChallengeModal() {
+        const modal = document.getElementById("openCreateChallengeModal");
+        if (modal) {
+            modal.style.display = "flex";  // because we use align-items / justify-content
+        }
+    }
+
+    function closeCreateChallengeModal() {
+        const modal = document.getElementById("openCreateChallengeModal");
+        if (modal) {
+            modal.style.display = "none";
+        }
+    }
+
+    // Optional: close when clicking outside the content
+    document.addEventListener("click", function (e) {
+        const modal = document.getElementById("openCreateChallengeModal");
+        if (!modal) return;
+
+        const dialog = modal.firstElementChild;
+        if (e.target === modal) {
+            modal.style.display = "none";
+        }
+    });
+</script>
+
+{% endblock content %}
