@@ -266,6 +266,7 @@ class Profile(models.Model):
     ]
 
     user = models.OneToOneField(User, related_name='profile', on_delete=models.CASCADE)
+    
     level = models.CharField(max_length=20, default="Beginner")
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student')
     points = models.IntegerField(default=0,validators=[MinValueValidator(0)])

@@ -300,8 +300,6 @@ def challenge_list(request):
     if tag:
         challenges = challenges.filter(tags__id=tag)
 
-   
-    
 
     context = {
         "challenges": challenges,
@@ -415,6 +413,7 @@ def challenge_submit(request, challenge_slug):
 
         tests = challenge.hidden_tests or []
 
+
         # 3) Create Submission (pending)
         submission = Submission.objects.create(
             user=request.user,
@@ -451,19 +450,21 @@ def challenge_submit(request, challenge_slug):
         # 5) Set status + points_awarded
         if all_passed:
             submission.status = "passed"
-            submission.points_awarded = challenge.points
         else:
             submission.status = "failed"
-            submission.points_awarded = 0
 
         submission.save()
 
-        # 6) Return JSON for JS
+        # 6) Award points (once per challenge) + update Profile.points
+        award_points_for_submission(submission)
+
+        # 7) Return JSON for JS
         return JsonResponse(
             {
                 "status": submission.status,
                 "results": results,
                 "submission_id": submission.id,
+                "points_awarded": submission.points_awarded,
             }
         )
 
@@ -516,11 +517,6 @@ def run_tests_view(request, challenge_slug):
     )
 
 def run_python_code(user_code: str, test_input: str):
-    """
-    Very simple runner:
-    - replaces input() with our own function that reads from test_input
-    - replaces print() so we can capture the output
-    """
 
     # Split the test input into lines (e.g. "7\n" -> ["7"])
     input_lines = test_input.splitlines()
@@ -562,3 +558,39 @@ def run_python_code(user_code: str, test_input: str):
 
     # Join all printed lines with newlines
     return True, "\n".join(output_lines) + "\n"
+
+def award_points_for_submission(submission):
+
+    # 1) Only passed submissions can get points
+    if submission.status != "passed":
+        # Ensure failed submissions give 0 points
+        if submission.points_awarded != 0:
+            submission.points_awarded = 0
+            submission.save(update_fields=["points_awarded"])
+        return
+
+    # 2) Check if this user already got points for THIS challenge
+    from .models import Submission, Profile  
+
+    already_rewarded = Submission.objects.filter(
+        user=submission.user,
+        challenge=submission.challenge,
+        status="passed",
+        points_awarded__gt=0,
+    ).exclude(id=submission.id).exists()
+
+    if already_rewarded:
+        if submission.points_awarded != 0:
+            submission.points_awarded = 0
+            submission.save(update_fields=["points_awarded"])
+        return
+
+    # 3) First time solving this challenge successfully → award points
+    challenge_points = submission.challenge.points
+
+    submission.points_awarded = challenge_points
+    submission.save(update_fields=["points_awarded"])
+
+    profile, _ = Profile.objects.get_or_create(user=submission.user)
+    profile.points = (profile.points or 0) + challenge_points
+    profile.save(update_fields=["points"])
