@@ -47,23 +47,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Close everything
             hideAllCodeBlocks();
+if (isCurrentlyHidden) {
+    // Open this one (plain text)
+    codeBlock.style.display = "block";
+    button.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Code';
+} else {
+    // Was visible -> now closed (already handled by hideAllCodeBlocks)
+    button.innerHTML = '<i class="fas fa-eye"></i> View Code';
+}
 
-            if (isCurrentlyHidden) {
-                // Open this one
-                codeBlock.style.display = "block";
-                button.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Code';
-
-                // Optional: syntax highlighting
-                if (window.Prism) {
-                    const innerCode = codeBlock.querySelector("code");
-                    if (innerCode) {
-                        Prism.highlightElement(innerCode);
-                    }
-                }
-            } else {
-                // Was visible -> now closed (already handled by hideAllCodeBlocks)
-                button.innerHTML = '<i class="fas fa-eye"></i> View Code';
-            }
         });
     }
 

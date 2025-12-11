@@ -553,6 +553,8 @@
 
 
 
+
+
 /* ===============================
    RECENT SUBMISSIONS - MODERN CARD STYLE
    =============================== */
@@ -595,55 +597,57 @@
     border-radius: 50%;
     background: var(--primary-500);
     color: white;
-    font-weight: 700;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.1rem;
+    font-weight: 700;
+    font-size: 1.2rem;
 }
 
-/* Text section */
+/* Text details */
 .submission-text {
     display: flex;
     flex-direction: column;
+    gap: 0.25rem;
 }
 
 .submission-title {
-    font-size: 1rem;
+    font-size: 0.95rem;
     color: var(--text-primary);
 }
 
 .submission-time {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
-    margin-top: 2px;
 }
 
-.submission-time i {
-    margin-right: 4px;
-}
-
-/* Right side: Status badge */
-.submission-right {
-    display: flex;
+/* Status badge */
+.badge-modern {
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-md);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: capitalize;
+    display: inline-flex;
     align-items: center;
+    gap: 0.25rem;
 }
 
-/* Passed */
+/* Status colors */
 .badge-passed {
     background: rgba(16, 185, 129, 0.15);
-    color: var(--success);
+    color: rgb(16, 185, 129);
+    border: 1px solid rgb(16, 185, 129);
 }
 
-/* Failed */
 .badge-failed {
     background: rgba(239, 68, 68, 0.15);
-    color: var(--error);
+    color: rgb(239, 68, 68);
+    border: 1px solid rgb(239, 68, 68);
 }
 
-/* Other statuses (e.g. pending) */
-.badge-pending,
-.badge-running {
-    background: rgba(59, 130, 246, 0.15);
-    color: var(--info);
+.badge-pending {
+    background: rgba(234, 179, 8, 0.15);
+    color: rgb(234, 179, 8);
+    border: 1px solid rgb(234, 179, 8);
 }

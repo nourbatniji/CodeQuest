@@ -166,11 +166,7 @@
 
         <div class="challenge-actions">
             {% if user.is_staff %}
-            <!-- Mentor View: completion + management buttons -->
-            <span class="badge-modern badge-success">
-                <i class="fas fa-users"></i>
-                {{ item.completed_count|default:0 }}/{{ members_count }} Completed
-            </span>
+
 
             <!-- Edit: open modal -->
             <button type="button" class="btn-modern btn-secondary"
@@ -238,65 +234,65 @@
     {% endfor %}
 </div>
 
-<div class="row">
-    <div class="col-md-8">
-        <div class="card mb-4 shadow-sm">
-            <div class="card-body">
-                <h4 class="card-title mb-2">About this classroom</h4>
-                <p class="card-text">
-                    {{ classroom.description|default:"No description added yet." }}
-                </p>
-                <p class="card-text mb-0">
-                    <strong>Created at:</strong>
-                    {{ classroom.created_at|date:"M d, Y" }}
-                </p>
-            </div>
-        </div>
+<!-- About Classroom Section -->
+<div class="section-header" style="margin-top: 2rem;">
+    <h2><i class="fas fa-info-circle"></i> About this Classroom</h2>
+</div>
 
-        <!-- Student Progress / Leaderboard Section -->
-        <div class="section-header" style="margin-top: 2rem;">
-            {% if user.is_staff %}
-            <h2><i class="fas fa-chart-line"></i> Student Progress</h2>
-            <button class="btn-modern btn-secondary" style="padding: 0.5rem 1rem;">
-                <i class="fas fa-download"></i> Export Report
-            </button>
-            {% else %}
-            <h2><i class="fas fa-trophy"></i> Classroom Leaderboard</h2>
-            <a href="/leaderboard/">
-                View Global <i class="fas fa-arrow-right"></i>
-            </a>
-            {% endif %}
-        </div>
-
-        <div class="leaderboard-table-container animate-fade-in">
-            <table class="leaderboard-table">
-                <thead>
-                    <tr>
-                        <th>Rank</th>
-                        <th>Student</th>
-                        <th>Solved</th>
-                        <th>Points</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td class="rank-cell top-3">1</td>
-                        <td>
-                            <div class="user-cell">
-                                <div class="user-avatar" style="background: linear-gradient(135deg, #fbbf24, #f59e0b);">
-                                </div>
-                                <div class="user-info">
-                                    <div class="user-name"></div>
-                                </div>
-                            </div>
-                        </td>
-                        <td></td>
-                        <td class="points-cell"></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+<div class="card-modern animate-fade-in" style="padding: 1.5rem; margin-bottom: 2rem;">
+    <p style="color: var(--text-secondary); margin-bottom: 1rem; line-height: 1.6;">
+        {{ classroom.description|default:"No description added yet." }}
+    </p>
+    <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--text-secondary); font-size: 0.875rem;">
+        <i class="fas fa-calendar-plus"></i>
+        <strong>Created:</strong>
+        <span class="date-badge">{{ classroom.created_at|date:"M d, Y" }}</span>
     </div>
+</div>
+
+<!-- Student Progress / Leaderboard Section -->
+<div class="section-header" style="margin-top: 2rem;">
+    {% if user.is_staff %}
+    <h2><i class="fas fa-chart-line"></i> Student Progress</h2>
+    <button class="btn-modern btn-secondary" style="padding: 0.5rem 1rem;">
+        <i class="fas fa-download"></i> Export Report
+    </button>
+    {% else %}
+    <h2><i class="fas fa-trophy"></i> Classroom Leaderboard</h2>
+    <a href="/leaderboard/"
+        style="color: var(--primary-500); font-weight: 600; font-size: 0.875rem; text-decoration: none; display: flex; align-items: center; gap: 0.5rem;">
+        View Global <i class="fas fa-arrow-right"></i>
+    </a>
+    {% endif %}
+</div>
+
+<div class="leaderboard-table-container animate-fade-in">
+    <table class="leaderboard-table">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Student</th>
+                <th>Solved</th>
+                <th>Points</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="rank-cell top-3">1</td>
+                <td>
+                    <div class="user-cell">
+                        <div class="user-avatar" style="background: linear-gradient(135deg, #fbbf24, #f59e0b);">
+                        </div>
+                        <div class="user-info">
+                            <div class="user-name"></div>
+                        </div>
+                    </div>
+                </td>
+                <td></td>
+                <td class="points-cell"></td>
+            </tr>
+        </tbody>
+    </table>
 </div>
 
 
@@ -330,10 +326,11 @@
 
                     <!-- LEFT COLUMN -->
                     <div class="modal-col">
-                        
+
                         <div class="form-group-modern">
                             <label class="form-label-modern">Title</label>
-                            <input type="text" name="title" class="form-control-modern" placeholder="e.g. Two Sum" required>
+                            <input type="text" name="title" class="form-control-modern" placeholder="e.g. Two Sum"
+                                required>
                         </div>
 
                         <div class="form-group-modern">
@@ -353,7 +350,7 @@
                         <div class="form-group-modern">
                             <label class="form-label-modern">Description</label>
                             <textarea name="description" class="form-control-modern" rows="4"
-                                      placeholder="Describe the problem statement..." required></textarea>
+                                placeholder="Describe the problem statement..." required></textarea>
                         </div>
 
                     </div>
@@ -364,25 +361,25 @@
                         <div class="form-group-modern">
                             <label class="form-label-modern">Input Description</label>
                             <textarea name="input_description" class="form-control-modern" rows="2"
-                                      placeholder="Explain the input format..."></textarea>
+                                placeholder="Explain the input format..."></textarea>
                         </div>
 
                         <div class="form-group-modern">
                             <label class="form-label-modern">Output Description</label>
                             <textarea name="output_description" class="form-control-modern" rows="2"
-                                      placeholder="Explain the output format..."></textarea>
+                                placeholder="Explain the output format..."></textarea>
                         </div>
 
                         <div class="form-group-modern">
                             <label class="form-label-modern">Sample Input</label>
                             <textarea name="sample_input" class="form-control-modern" rows="2"
-                                      placeholder="e.g.&#10;2 3"></textarea>
+                                placeholder="e.g.&#10;2 3"></textarea>
                         </div>
 
                         <div class="form-group-modern">
                             <label class="form-label-modern">Sample Output</label>
                             <textarea name="sample_output" class="form-control-modern" rows="2"
-                                      placeholder="e.g.&#10;5"></textarea>
+                                placeholder="e.g.&#10;5"></textarea>
                         </div>
 
                     </div>
@@ -391,25 +388,25 @@
                 <div class="form-group-modern">
                     <label class="form-label-modern">Example Explanation</label>
                     <textarea name="example_explanation" class="form-control-modern" rows="3"
-                              placeholder="Optional explanation of the sample input/output..."></textarea>
+                        placeholder="Optional explanation of the sample input/output..."></textarea>
                 </div>
 
                 <div class="form-group-modern">
                     <label class="form-label-modern">Starter Code</label>
                     <textarea name="starter_code" class="form-control-modern" rows="3"
-                              placeholder="Optional starter code for students..."></textarea>
+                        placeholder="Optional starter code for students..."></textarea>
                 </div>
 
                 <div class="form-group-modern">
                     <label class="form-label-modern">Constraints</label>
                     <textarea name="constraints" class="form-control-modern" rows="2"
-                              placeholder="e.g. 1 ≤ n ≤ 10^5"></textarea>
+                        placeholder="e.g. 1 ≤ n ≤ 10^5"></textarea>
                 </div>
 
                 <div class="form-group-modern">
                     <label class="form-label-modern">Hidden Tests (JSON)</label>
                     <textarea name="hidden_tests" class="form-control-modern" rows="3"
-                              placeholder='Example: [{"input": "2 3", "output": "5"}]'></textarea>
+                        placeholder='Example: [{"input": "2 3", "output": "5"}]'></textarea>
                 </div>
 
             </div>

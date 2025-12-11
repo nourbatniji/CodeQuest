@@ -610,25 +610,43 @@ def get_user_challenge_status(user, challenge):
     if qs.filter(status="passed").exists():
         return "passed"
 
-    # has submissions but none passed / pending
+    # has submissions but none passed
     return "failed"
+
 
 def challenge_list(request):
     if not request.user.is_authenticated:
-        # You can also render a "please login" page instead if you prefer
         return redirect("login")
 
-    # 1) Get classrooms the user has joined
-    joined_classroom_ids = ClassroomMembership.objects.filter(
-        user=request.user
-    ).values_list("classroom_id", flat=True)
+    # --------------------------------------------------
+    # 1) Decide base queryset depending on role
+    # --------------------------------------------------
 
-    # 2) Start with challenges ONLY from those classrooms
-    challenges = Challenge.objects.filter(classroom_id__in=joined_classroom_ids)
+    # Classrooms where the user is the mentor
+    mentor_classrooms = Classroom.objects.filter(mentor=request.user)
 
-    # 3) Limit classrooms list in the filter dropdown to joined ones too
-    classrooms = Classroom.objects.filter(id__in=joined_classroom_ids)
+    if mentor_classrooms.exists():
+        # USER IS A MENTOR → show challenges from their classrooms
+        challenges = Challenge.objects.filter(
+            classroom__in=mentor_classrooms
+        )
+        classrooms = mentor_classrooms
+    else:
+        # USER IS A STUDENT → show challenges from classrooms they joined
+        joined_classroom_ids = ClassroomMembership.objects.filter(
+            user=request.user
+        ).values_list("classroom_id", flat=True)
 
+        challenges = Challenge.objects.filter(
+            classroom_id__in=joined_classroom_ids
+        )
+        classrooms = Classroom.objects.filter(
+            id__in=joined_classroom_ids
+        )
+
+    # --------------------------------------------------
+    # 2) Common filters (work for both mentor & student)
+    # --------------------------------------------------
     tags = Tag.objects.all()
 
     difficulty = request.GET.get("difficulty")
@@ -660,6 +678,37 @@ def challenge_list(request):
 
     return render(request, "challenges.html", context)
 
+
+class ChallengeDetailView(View):
+    def get(self, request, challenge_slug):
+        if not request.user.is_authenticated:
+            return render(request, "not_found.html")
+
+        challenge = get_object_or_404(Challenge, slug=challenge_slug)
+
+        # User submissions for this challenge
+        submissions = challenge.submissions.filter(
+            user=request.user
+        ).order_by("-created_at")
+
+        # User-specific status for this challenge
+        challenge_status = get_user_challenge_status(request.user, challenge)
+
+        # All comments for this challenge
+        comments_qs = challenge.comments.all().order_by("-created_at")
+
+        paginator = Paginator(comments_qs, 5)
+        page_number = request.GET.get("page")
+        page_obj = paginator.get_page(page_number)
+
+        context = {
+            "challenge": challenge,
+            "submissions": submissions,
+            "comments": page_obj,
+            "page_obj": page_obj,
+            "challenge_status": challenge_status,
+        }
+        return render(request, "challenge_details.html", context)
 
 class AddCommentView(View):
     def post(self, request, challenge_slug):

@@ -5,107 +5,34 @@
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'css/leaderboard.css' %}">
 <link rel="stylesheet" href="{% static 'css/challenge_details.css' %}">
-<style>
-    .challenge-container {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .problem-section,
-    .editor-section {
-        background: var(--surface);
-        border-radius: var(--radius-lg);
-        padding: 1.5rem;
-        border: 1px solid var(--border-color);
-    }
-
-    .code-editor {
-        background: var(--bg-tertiary);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        padding: 1rem;
-        font-family: 'JetBrains Mono', monospace;
-        min-height: 400px;
-        resize: vertical;
-        width: 100%;
-        color: var(--text-primary);
-        font-size: 0.875rem;
-    }
-
-    .code-editor:focus {
-        outline: none;
-        border-color: var(--primary-500);
-        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
-    }
-
-    .test-case {
-        background: var(--bg-secondary);
-        border-radius: var(--radius-md);
-        padding: 1rem;
-        margin-bottom: 1rem;
-        border-left: 3px solid var(--primary-500);
-    }
-
-    .submission-item {
-        background: var(--surface);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        padding: 1rem;
-        margin-bottom: 0.75rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .comment-box {
-        background: var(--bg-secondary);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        padding: 1rem;
-        margin-bottom: 1rem;
-    }
-
-    @media (max-width: 1024px) {
-        .challenge-container {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
 {% endblock %}
 
 {% block content %}
 <!-- Challenge Header -->
 <div class="dashboard-header animate-fade-in">
-    <div style="display: flex; justify-content: space-between; align-items: start;">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;">
         <div>
             <h1><i class="fas fa-code"></i> {{challenge.title}}</h1>
-
+            <div class="challenge-status {% if challenge_status == 'not_started' %}not-started{% elif challenge_status == 'in_progress' %}in-progress{% elif challenge_status == 'passed' %}passed{% elif challenge_status == 'failed' %}failed{% endif %}"
+                style="margin-top: 0.5rem;">
+                {% if challenge_status == "not_started" %}
+                <i class="fas fa-circle"></i> Not Started
+                {% elif challenge_status == "in_progress" %}
+                <i class="fas fa-spinner"></i> In Progress
+                {% elif challenge_status == "passed" %}
+                <i class="fas fa-check-circle"></i> Passed
+                {% elif challenge_status == "failed" %}
+                <i class="fas fa-times-circle"></i> Failed
+                {% endif %}
+            </div>
         </div>
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
-            <span class="badge-modern badge-easy">
-                <i class="fas fa-circle"></i> {{challenge.difficulty}}
+        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <span class="badge-modern badge-{{challenge.difficulty}}">
+                <i class="fas fa-signal"></i> {{challenge.difficulty|title}}
             </span>
-            <div>
             <a href="/classrooms/" class="btn-modern btn-secondary">
                 <i class="fas fa-arrow-left"></i> Back to Classroom
             </a>
-
-            <p>
-                Status:
-                {% if challenge_status == "not_started" %}
-                Not started
-                {% elif challenge_status == "in_progress" %}
-                In progress
-                {% elif challenge_status == "passed" %}
-                Passed ✅
-                {% elif challenge_status == "failed" %}
-                Failed ❌
-                {% endif %}
-            </p>
-
-
         </div>
     </div>
 </div>
@@ -114,32 +41,33 @@
 <div class="challenge-container animate-fade-in">
     <!-- Problem Description -->
     <div class="problem-section">
-        <h3 style="margin-bottom: 1rem; color: var(--text-primary);">
+        <h3>
             <i class="fas fa-book"></i> Problem Description
         </h3>
-        <p class="text-black">{{challenge.description}}</p>
-        <p class="m-0"><span class="text-black">Input description:</span> {{challenge.input_description}}</p>
-        <p><span class="text-black">Output description:</span> {{challenge.output_description}}</p>
+        <p style="color: var(--text-secondary); line-height: 1.6;">{{challenge.description}}</p>
+        <p style="color: var(--text-secondary); margin-bottom: 0.5rem;"><strong>Input:</strong>
+            {{challenge.input_description}}</p>
+        <p style="color: var(--text-secondary);"><strong>Output:</strong> {{challenge.output_description}}</p>
 
-        <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">
+        <h4>
             <i class="fas fa-lightbulb"></i> Example
         </h4>
 
         <div class="test-case">
-            <strong style="color: var(--text-primary);">Input:</strong>
-            <pre style="margin: 0.5rem 0; color: var(--text-secondary);">{{challenge.sample_input}}</pre>
-            <strong style="color: var(--text-primary);">Output:</strong>
-            <pre style="margin: 0.5rem 0; color: var(--text-secondary);">{{challenge.sample_output}}</pre>
-            <strong style="color: var(--text-primary);">Explanation:</strong>
-            <p style="margin: 0.5rem 0 0 0; color: var(--text-secondary);">
+            <strong>Input:</strong>
+            <pre>{{challenge.sample_input}}</pre>
+            <strong>Output:</strong>
+            <pre>{{challenge.sample_output}}</pre>
+            <strong>Explanation:</strong>
+            <p>
                 {{challenge.example_explanation}}
             </p>
         </div>
 
-        <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">
+        <h4>
             <i class="fas fa-list"></i> Constraints
         </h4>
-        <ul style="color: var(--text-secondary); padding-left: 1.5rem;">
+        <ul style="padding-left: 1.5rem;">
             {% for line in challenge.constraints.splitlines %}
             {% if line %}
             <li>{{ line }}</li>
@@ -147,7 +75,7 @@
             {% endfor %}
         </ul>
 
-        <h4 style="margin-top: 1.5rem; margin-bottom: 1rem; color: var(--text-primary);">
+        <h4>
             <i class="fas fa-tags"></i> Tags
         </h4>
         <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
@@ -162,10 +90,10 @@
     <!-- Code Editor -->
     <div class="editor-section" id="challenge-data" data-slug="{{ challenge.slug }}">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h3 style="margin: 0; color: var(--text-primary);">
+            <h3>
                 <i class="fas fa-terminal"></i> Code Editor
             </h3>
-            <select class="filter-select" style="width: auto; min-width: 150px;">
+            <select class="filter-select">
                 <option value="python">Python</option>
                 <option value="javascript">JavaScript</option>
                 <option value="java">Java</option>
@@ -193,12 +121,14 @@
             </div>
         </form>
 
+
+
         <div style="margin-top: 1.5rem;">
-            <h4 style="margin-bottom: 1rem; color: var(--text-primary);">
+            <h4>
                 <i class="fas fa-vial"></i> Test Results
             </h4>
-            <div id="test-results" style="color: var(--text-secondary); font-size: 0.875rem;">
-                <p style="text-align: center; padding: 2rem; color: var(--text-tertiary);">
+            <div id="test-results">
+                <p>
                     <i class="fas fa-info-circle"></i> Run tests to see results
                 </p>
             </div>
@@ -212,6 +142,7 @@
 </div>
 <!-- Submissions List -->
 
+
 <div class="animate-fade-in" style="margin-bottom: 2rem;" id="submission-list">
     {% for submission in submissions %}
     <div class="submission-item" data-id="{{ submission.id }}">
@@ -224,9 +155,8 @@
                 <i class="fas fa-clock"></i> {{ submission.created_at|timesince }} ago
             </div>
 
-            <pre class="submission-code" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;
-            padding:0.75rem;font-size:0.875rem;white-space:pre-wrap;overflow-x:auto;
-            font-family:Menlo,Monaco,Consolas,'Courier New',monospace;">{{ submission.code }}</pre>
+            <pre class="submission-code">{{ submission.code }}</pre>
+
 
         </div>
         <div style="display: flex; gap: 1rem; align-items: right;">
@@ -254,7 +184,7 @@
 </div>
 
 <div class="animate-fade-in">
-    <!-- التأكد من أن الـ form يحتوي على الـ action الصحيح -->
+
     <form id="comment-form" method="POST" action="{% url 'add_comment' challenge.slug %}">
         {% csrf_token %}
         <div class="card-modern" style="margin-bottom: 1.5rem;">
@@ -309,8 +239,6 @@
 {{ challenge.hidden_tests|json_script:"hidden-tests-data" }}
 {% endblock %}
 {% block scripts %}
-<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css" rel="stylesheet" />
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
 <script src="{% static 'js/challenge_details.js' %}"></script>
+
 {% endblock %}
