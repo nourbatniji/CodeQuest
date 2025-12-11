@@ -349,29 +349,58 @@ def classrooms_page(request):
 
     return render(request, "classrooms.html", context)
 
+
 def classroom_detail(request, slug=None):
     if not request.user.is_authenticated:
         return render(request, "not_found.html")
 
+    # classroom with members + challenges counts
     classroom = get_object_or_404(
-        Classroom.objects.annotate(members_count=Count("memberships")),
+        Classroom.objects.annotate(
+            members_count=Count("memberships", distinct=True),
+            challenges_count=Count("challenges", distinct=True),
+        ),
         slug=slug,
     )
 
+
+    # is current user a member?
     is_member = ClassroomMembership.objects.filter(
         user=request.user,
         classroom=classroom,
     ).exists()
+    
+    # all challenges in this classroom
+    challenges = classroom.challenges.all().prefetch_related("tags", "submissions")
 
-    challenges_count = classroom.challenges.count()
+    # build status per challenge
+    challenge_entries = []
+    completed_count = 0
+
+    for ch in challenges:
+        status = get_user_challenge_status(request.user, ch)
+        challenge_entries.append({"challenge": ch, "status": status})
+        if status == "passed":
+            completed_count += 1
+
+    total_challenges = challenges.count()
+
+    # progress %
+    progress_percent = 0
+    if total_challenges:
+        progress_percent = round((completed_count / total_challenges) * 100)
 
     context = {
         "classroom": classroom,
         "is_member": is_member,
-        "challenges_count": challenges_count,
+        "members_count": classroom.members_count,
+        "challenges_count": classroom.challenges_count,
+        "challenges": challenges,              # raw list if you still need it
+        "challenge_entries": challenge_entries,  # for status badges in template
+        "completed_count": completed_count,
+        "progress_percent": progress_percent,
     }
     return render(request, "classroom_details.html", context)
-
 
 def join_classroom(request, slug):
     if not request.user.is_authenticated:
@@ -415,15 +444,40 @@ def leave_classroom(request, slug):
 
 # ------------ CHALLENGES ------------
 
+def get_user_challenge_status(user, challenge):
+    qs = challenge.submissions.filter(user=user)
+
+    if not qs.exists():
+        return "not_started"
+
+    if qs.filter(status="passed").exists():
+        return "passed"
+
+    # has submissions but none passed / pending
+    return "failed"
+
 def challenge_list(request):
-    challenges = Challenge.objects.all()
+    if not request.user.is_authenticated:
+        # You can also render a "please login" page instead if you prefer
+        return redirect("login")
+
+    # 1) Get classrooms the user has joined
+    joined_classroom_ids = ClassroomMembership.objects.filter(
+        user=request.user
+    ).values_list("classroom_id", flat=True)
+
+    # 2) Start with challenges ONLY from those classrooms
+    challenges = Challenge.objects.filter(classroom_id__in=joined_classroom_ids)
+
+    # 3) Limit classrooms list in the filter dropdown to joined ones too
+    classrooms = Classroom.objects.filter(id__in=joined_classroom_ids)
+
     tags = Tag.objects.all()
-    classrooms = Classroom.objects.all()
 
     difficulty = request.GET.get("difficulty")
     classroom = request.GET.get("classroom")
     tag = request.GET.get("tag")
-    search = request.GET.get("search", '')
+    search = request.GET.get("search", "")
 
     if search:
         challenges = challenges.filter(title__icontains=search)
@@ -437,18 +491,18 @@ def challenge_list(request):
     if tag:
         challenges = challenges.filter(tags__id=tag)
 
-
     context = {
         "challenges": challenges,
         "classrooms": classrooms,
         "tags": tags,
-        'search': search,
+        "search": search,
         "selected_difficulty": difficulty,
         "selected_classroom": classroom,
         "selected_tag": tag,
     }
 
     return render(request, "challenges.html", context)
+
 
 class AddCommentView(View):
     def post(self, request, challenge_slug):
@@ -510,10 +564,12 @@ class ChallengeDetailView(View):
             user=request.user
         ).order_by("-created_at")
 
-        # All comments for this challenge (flat, no parent)
+        # User-specific status for this challenge
+        challenge_status = get_user_challenge_status(request.user, challenge)
+
+        # All comments for this challenge
         comments_qs = challenge.comments.all().order_by("-created_at")
 
-        # Pagination (5 comments per page)
         paginator = Paginator(comments_qs, 5)
         page_number = request.GET.get("page")
         page_obj = paginator.get_page(page_number)
@@ -521,99 +577,93 @@ class ChallengeDetailView(View):
         context = {
             "challenge": challenge,
             "submissions": submissions,
-            "comments": page_obj,   # you can use this if needed
-            "page_obj": page_obj,   # template already loops on page_obj
+            "comments": page_obj,
+            "page_obj": page_obj,
+            "challenge_status": challenge_status,   # <<< NEW
         }
         return render(request, "challenge_details.html", context)
 
 
 @require_POST
-@require_POST
 def challenge_submit(request, challenge_slug):
-    try:
-        if not request.user.is_authenticated:
-            return JsonResponse({"error": "Not authenticated"}, status=403)
+    # 1) Check authentication
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Not authenticated"}, status=403)
 
-        # 1) Get challenge
-        challenge = get_object_or_404(Challenge, slug=challenge_slug)
+    # 2) Get the challenge
+    challenge = get_object_or_404(Challenge, slug=challenge_slug)
 
-        # 2) Read + validate code and language
-        user_code = (request.POST.get("code") or "").strip()
-        language = request.POST.get("language", "python")
+    # 3) Read and validate code
+    user_code = (request.POST.get("code") or "").strip()
+    language = request.POST.get("language", "python")
 
-        if not user_code:
-            return JsonResponse({"error": "Code is required"}, status=400)
+    if not user_code:
+        return JsonResponse({"error": "Code is required"}, status=400)
 
-        valid_languages = {choice[0] for choice in Submission.LANGUAGE_CHOICES}
-        if language not in valid_languages:
-            language = "python"
+    # 4) Validate language against Submission choices
+    valid_languages = {choice[0] for choice in Submission.LANGUAGE_CHOICES}
+    if language not in valid_languages:
+        language = "python"
 
-        tests = challenge.hidden_tests or []
+    # 5) Get hidden tests (list of dicts: {"input": "...", "output": "..."})
+    tests = challenge.hidden_tests or []
 
-        # 3) Calculate attempt_number **for this user + this challenge only**
-        previous_attempts = Submission.objects.filter(
-            user=request.user,
-            challenge=challenge,
-        ).count()
+    # 6) Count previous attempts for this user + challenge
+    previous_attempts = Submission.objects.filter(
+        user=request.user,
+        challenge=challenge,
+    ).count()
+    attempt_number = previous_attempts + 1
 
-        # 4) Create Submission (pending)
-        submission = Submission.objects.create(
-            user=request.user,
-            challenge=challenge,
-            code=user_code,
-            language=language,
-            status="pending",
-            attempt_number=previous_attempts + 1,   # <--- this is the only place we set it
-        )
+    # 7) Create a new Submission with status "pending"
+    submission = Submission.objects.create(
+        user=request.user,
+        challenge=challenge,
+        code=user_code,
+        language=language,
+        status="pending",
+        attempt_number=attempt_number,
+    )
 
-        results = []
-        all_passed = True
+    all_passed = True
+    results = []
 
-        # 5) Run tests
-        for test in tests:
-            test_input = test.get("input", "")
-            expected_output = (test.get("output", "") or "").strip()
+    # 8) Run all hidden tests
+    for test in tests:
+        test_input = test.get("input", "")
+        expected_output = (test.get("output", "") or "").strip()
 
-            ok, actual_output = run_python_code(user_code, test_input)
-            actual_output = (actual_output or "").strip()
 
-            passed = ok and (actual_output == expected_output)
-            results.append(
-                {
-                    "input": test_input,
-                    "expected": expected_output,
-                    "user_output": actual_output,
-                    "passed": passed,
-                }
-            )
+        ok, actual_output = run_python_code(user_code, test_input)
+        actual_output = (actual_output or "").strip()
 
-            if not passed:
-                all_passed = False
+        passed = ok and (actual_output == expected_output)
 
-        # 6) Set status
-        submission.status = "passed" if all_passed else "failed"
-        submission.save(update_fields=["status"])
+        results.append({
+            "input": test_input,
+            "expected": expected_output,
+            "user_output": actual_output,
+            "passed": passed,
+        })
 
-        # 7) Award points (your existing function)
-        award_points_for_submission(submission)
+        if not passed:
+            all_passed = False
 
-        # 8) Return JSON including attempt_number
-        return JsonResponse(
-            {
-                "status": submission.status,
-                "results": results,
-                "submission_id": submission.id,              # DB id
-                "attempt_number": submission.attempt_number, # what we show
-                "points_awarded": submission.points_awarded,
-            }
-        )
+    # 9) Update submission status
+    submission.status = "passed" if all_passed else "failed"
+    submission.save(update_fields=["status"])
 
-    except Exception as e:
-        print("ERROR in challenge_submit:\n", traceback.format_exc())
-        return JsonResponse(
-            {"error": f"Server error: {type(e).__name__}: {e}"},
-            status=500
-        )
+    # 10) Award points (your helper can set submission.points_awarded internally)
+    points_awarded = award_points_for_submission(submission)
+
+    # 11) Return response to the frontend
+    return JsonResponse({
+        "status": submission.status,
+        "results": results,
+        "submission_id": submission.id,
+        "attempt_number": submission.attempt_number,
+        "points_awarded": points_awarded,
+    })
 
 
 @require_POST

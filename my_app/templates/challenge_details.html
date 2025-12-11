@@ -87,19 +87,24 @@
             <span class="badge-modern badge-easy">
                 <i class="fas fa-circle"></i> {{challenge.difficulty}}
             </span>
-            <a href="/classrooms/" class="btn-modern btn-secondary">
-                <i class="fas fa-arrow-left"></i> Back to Classroom
-            </a>
+            <div>
+                <a href="{% url 'classroom_detail' challenge.classroom.slug %}" class="btn-modern btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Classroom
+                </a>
 
-            {% if submission.status == "not_started" %}
-            <span class="badge badge-gray">Not Started</span>
-
-            {% elif ch.status == "in_progress" %}
-            <span class="badge badge-yellow">In Progress</span>
-
-            {% elif ch.status == "passed" %}
-            <span class="badge badge-green">Passed</span>
-            {% endif %}
+                <p>
+                    Status:
+                    {% if challenge_status == "not_started" %}
+                    Not started
+                    {% elif challenge_status == "in_progress" %}
+                    In progress
+                    {% elif challenge_status == "passed" %}
+                    Passed ✅
+                    {% elif challenge_status == "failed" %}
+                    Failed ❌
+                    {% endif %}
+                </p>
+            </div>
 
         </div>
     </div>
@@ -162,9 +167,6 @@
             </h3>
             <select class="filter-select" style="width: auto; min-width: 150px;">
                 <option value="python">Python</option>
-                <option value="javascript">JavaScript</option>
-                <option value="java">Java</option>
-                <option value="cpp">C++</option>
             </select>
         </div>
 
@@ -174,7 +176,8 @@
                 spellcheck="false">{{ challenge.starter_code }}
             </textarea>
             <div style="display: flex; gap: 1rem; margin-top: 1rem;">
-                <button id="submit-btn" type="submit" class="btn-modern btn-primary" style="flex: 1;">
+
+                <button id="submit-btn" type="button" class="btn-modern btn-primary" style="flex: 1;">
                     <i class="fas fa-paper-plane"></i>
                     <span class="btn-text">Submit Solution</span>
                     <span class="spinner" style="display:none;"></span>
@@ -218,13 +221,13 @@
             <div style="font-size: 0.875rem; color: var(--text-secondary);">
                 <i class="fas fa-clock"></i> {{ submission.created_at|timesince }} ago
             </div>
-            
+
             <pre class="submission-code" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;
             padding:0.75rem;font-size:0.875rem;white-space:pre-wrap;overflow-x:auto;
             font-family:Menlo,Monaco,Consolas,'Courier New',monospace;">{{ submission.code }}</pre>
 
-</div>
-<div style="display: flex; gap: 1rem; align-items: right;">
+        </div>
+        <div style="display: flex; gap: 1rem; align-items: right;">
             <span class="badge-modern" style="background-color: rgba(16, 185, 129, 0.1); color: var(--success);">
                 <i class="fas fa-check-circle"></i> {{ submission.status }}
             </span>

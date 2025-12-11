@@ -1,148 +1,214 @@
 {% extends 'base.html' %}
+
+{% block title %}Classroom Details - CodeQuest{% endblock %}
+
+{% block extra_css %}
 {% load static %}
-{% block title %}Classroom Details - {{ classroom.name }}{% endblock %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+<link rel="stylesheet" href="{% static 'css/leaderboard.css' %}">
+{% endblock %}
 
 {% block content %}
-<style>
-    .mini-chart {
-        max-height: 100px; /* Adjust as needed for smaller charts */
-    }
-</style>
+<!-- Classroom Header -->
+<div class="dashboard-header animate-fade-in d-flex justify-content-between">
+    <div>
+        <h1><i class="fas fa-users"></i> {{ classroom.name }}</h1>
+        <p>{{ classroom.description }}</p>
 
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-12 d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="mb-1">Classroom: {{ classroom.name }}</h1>
-                <p class="text-muted mb-0">
-                    Mentor: <strong>{{ classroom.mentor.username }}</strong>
-                </p>
-            </div>
+    </div>
+{% if request.user.is_authenticated %}
+    {% if is_member %}
+        <!-- LEAVE CLASSROOM -->
+        <form method="POST" action="{% url 'leave_classroom' classroom.slug %}">
+            {% csrf_token %}
+            <button class="btn-modern"
+                style="background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid var(--error);">
+                <i class="fas fa-sign-out-alt"></i> Leave Classroom
+            </button>
+        </form>
+    {% else %}
+        <!-- JOIN CLASSROOM -->
+        <form method="POST" action="{% url 'join_classroom' classroom.slug %}">
+            {% csrf_token %}
+            <button class="btn-modern btn-primary">
+                <i class="fas fa-user-plus"></i> Join Classroom
+            </button>
+        </form>
+    {% endif %}
+{% endif %}
 
-            <!-- Join / Leave buttons -->
-            <div>
-                {% if is_member %}
-                    <form method="post" action="{% url 'leave_classroom' slug=classroom.slug %}">
-                        {% csrf_token %}
-                        <button class="btn btn-outline-danger">
-                            <i class="fas fa-door-open"></i> Leave classroom
-                        </button>
-                    </form>
-                {% else %}
-                    <form method="post" action="{% url 'join_classroom' slug=classroom.slug %}">
-                        {% csrf_token %}
-                        <button class="btn btn-primary">
-                            <i class="fas fa-door-closed"></i> Join classroom
-                        </button>
-                    </form>
+</div>
+
+<!-- Classroom Info Cards -->
+<div class="stats-grid animate-fade-in">
+    <div class="stat-card">
+        <div class="stat-card-icon primary">
+            <i class="fas fa-user-tie"></i>
+        </div>
+        <div class="stat-card-value">{{ classroom.mentor.username }}</div>
+        <div class="stat-card-label">Instructor</div>
+
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-icon success">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-card-value">{{ members_count }}</div>
+        <div class="stat-card-label">Members</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-icon warning">
+            <i class="fas fa-code"></i>
+        </div>
+        <div class="stat-card-value">{{ challenges_count }}</div>
+        <div class="stat-card-label">Challenges</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-icon info">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="stat-card-value">67%</div>
+        <div class="stat-card-label">Your Progress</div>
+    </div>
+</div>
+
+<!-- Announcements -->
+<div class="section-header">
+    <h2><i class="fas fa-bullhorn"></i> Announcements</h2>
+</div>
+
+<!-- <div class="card-modern animate-fade-in" style="margin-bottom: 2rem;">
+    <div
+        style="display: flex; align-items: start; gap: 1rem; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color);">
+        <div style="flex: 1;">
+            <h4 style="margin-bottom: 0.5rem; color: var(--text-primary);">
+                <i class="fas fa-info-circle" style="color: var(--primary-500);"></i>
+                Welcome to Python Fundamentals!
+            </h4>
+            <p style="color: var(--text-secondary); font-size: 0.875rem; margin: 0;">
+                <i class="fas fa-clock"></i> Posted 2 days ago by Prof. Johnson
+            </p>
+        </div>
+    </div>
+    <p style="color: var(--text-secondary); margin: 0;">
+        Welcome everyone! We'll be covering Python basics, data structures, and algorithms. Make sure to complete all
+        challenges and participate in discussions. Good luck!
+    </p>
+</div> -->
+
+<!-- Challenges List -->
+<div class="section-header">
+    <h2><i class="fas fa-code"></i> Challenges</h2>
+    <span class="badge-modern badge-primary">
+        {{ completed_count|default:0 }} / {{ challenges_count }} Completed
+    </span>
+</div>
+
+<div class="challenge-list animate-fade-in">
+    {% for item in challenge_entries %}
+    {% with challenge=item.challenge status=item.status %}
+    <div class="challenge-item" onclick="window.location.href='{% url 'challenge_detail' challenge.slug %}'">
+        <div class="challenge-info">
+            <div class="challenge-title">{{ challenge.title }}</div>
+            <div class="challenge-meta">
+                <span class="badge-modern badge-{{ challenge.difficulty }}">
+                    <i class="fas fa-circle"></i> {{ challenge.get_difficulty_display }}
+                </span>
+                {% if challenge.tags.all %}
+                <span style="color: var(--text-secondary); font-size: 0.875rem;">
+                    <i class="fas fa-tags"></i>
+                    {% for tag in challenge.tags.all %}
+                    {{ tag.name }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                </span>
                 {% endif %}
             </div>
         </div>
+
+        <div class="challenge-actions">
+            {% if status == "passed" %}
+            <span class="badge-modern" style="background-color: rgba(16, 185, 129, 0.1); color: var(--success);">
+                <i class="fas fa-check-circle"></i> Passed
+            </span>
+            <button class="btn-modern btn-secondary"
+                onclick="event.stopPropagation(); window.location.href='{% url 'challenge_detail' challenge.slug %}'">
+                <i class="fas fa-eye"></i> View
+            </button>
+
+            {% elif status == "not_started" %}
+            <span class="badge-modern" style="background-color: rgba(99, 102, 241, 0.1); color: var(--primary-500);">
+                <i class="fas fa-circle"></i> Not Started
+            </span>
+            <button class="btn-modern btn-primary"
+                onclick="event.stopPropagation(); window.location.href='{% url 'challenge_detail' challenge.slug %}'">
+                <i class="fas fa-play"></i> Start
+            </button>
+
+            {% elif status == "in_progress" %}
+            <span class="badge-modern" style="background-color: rgba(234, 179, 8, 0.1); color: #ca8a04;">
+                <i class="fas fa-spinner"></i> In Progress
+            </span>
+            <button class="btn-modern btn-primary"
+                onclick="event.stopPropagation(); window.location.href='{% url 'challenge_detail' challenge.slug %}'">
+                <i class="fas fa-play"></i> Continue
+            </button>
+
+            {% elif status == "failed" %}
+            <span class="badge-modern" style="background-color: rgba(248, 113, 113, 0.1); color: #ef4444;">
+                <i class="fas fa-times-circle"></i> Failed
+            </span>
+            <button class="btn-modern btn-primary"
+                onclick="event.stopPropagation(); window.location.href='{% url 'challenge_detail' challenge.slug %}'">
+                <i class="fas fa-redo"></i> Retry
+            </button>
+            {% endif %}
+        </div>
     </div>
+    {% endwith %}
+    {% empty %}
+    <p>No challenges in this classroom yet.</p>
+    {% endfor %}
+</div>
 
-    <hr class="my-3">
 
-    <div class="row">
-        <!-- Left: info + charts -->
-        <div class="col-md-8">
-            <!-- Basic info card -->
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body">
-                    <h4 class="card-title mb-2">About this classroom</h4>
-                    <p class="card-text">
-                        {{ classroom.description|default:"No description added yet." }}
-                    </p>
-                    <p class="card-text mb-0">
-                        <strong>Created at:</strong>
-                        {{ classroom.created_at|date:"M d, Y" }}
-                    </p>
-                </div>
-            </div>
+<!-- Classroom Leaderboard -->
+<div class="section-header" style="margin-top: 2rem;">
+    <h2><i class="fas fa-trophy"></i> Classroom Leaderboard</h2>
+    <a href="/leaderboard/">
+        View Global <i class="fas fa-arrow-right"></i>
+    </a>
+</div>
 
-            <!-- KPIs / Charts (you can hook real data later) -->
-            <div class="card mb-4 shadow-sm">
-                <div class="card-header">
-                    <h5 class="mb-0">Key Performance Indicators</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <!-- Challenge completion rate -->
-                        <div class="col-md-6 mb-3">
-                            <div class="card h-100 bg-light">
-                                <div class="card-body">
-                                    <h6 class="card-subtitle mb-2 text-muted">Challenge Completion Rate</h6>
-                                    <canvas id="completionRateChart" class="mini-chart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Average score -->
-                        <div class="col-md-6 mb-3">
-                            <div class="card h-100 bg-light">
-                                <div class="card-body">
-                                    <h6 class="card-subtitle mb-2 text-muted">Average Score</h6>
-                                    <canvas id="averageScoreChart" class="mini-chart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Activity trend -->
-                        <div class="col-md-12">
-                            <div class="card h-100 bg-light">
-                                <div class="card-body">
-                                    <h6 class="card-subtitle mb-2 text-muted">Member Activity Trend</h6>
-                                    <canvas id="activityTrendChart"></canvas>
-                                </div>
-                            </div>
+<div class="leaderboard-table-container animate-fade-in">
+    <table class="leaderboard-table">
+        <thead>
+            <tr>
+                <th>Rank</th>
+                <th>Student</th>
+                <th>Solved</th>
+                <th>Points</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="rank-cell top-3">1</td>
+                <td>
+                    <div class="user-cell">
+                        <div class="user-avatar" style="background: linear-gradient(135deg, #fbbf24, #f59e0b);"></div>
+                        <div class="user-info">
+                            <div class="user-name"></div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </div>
+                </td>
+                <td></td>
+                <td class="points-cell"></td>
+            </tr>
 
-        <!-- Right: stats -->
-        <div class="col-md-4">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header">
-                    <h5 class="mb-0">Classroom Statistics</h5>
-                </div>
-                <div class="card-body" id="classroom-stats">
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Members
-                            <span class="badge bg-primary rounded-pill">
-                                {{ classroom.memberships.count }}
-                            </span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Challenges
-                            <span class="badge bg-success rounded-pill">
-                                {{ challenges_count }}
-                            </span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Comments
-                            <span class="badge bg-info rounded-pill">
-                                0
-                            </span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Average Challenge Time
-                            <span class="badge bg-secondary rounded-pill">
-                                N/A
-                            </span>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-
-            <!-- You can later add a "Recent challenges" list here -->
-        </div>
-    </div>
+        </tbody>
+    </table>
 </div>
-{% endblock %}
 
-{% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="{% static 'js/classroom_details.js' %}"></script>
 {% endblock %}

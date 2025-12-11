@@ -1,33 +1,92 @@
 // challenge_details.js
 document.addEventListener("DOMContentLoaded", () => {
-    const submitBtn = document.getElementById("submit-btn");
-    const codeEditor = document.getElementById("code-editor");
-    const resultDiv = document.getElementById("submission-result");
-    const challengeData = document.getElementById("challenge-data");
-    const challengeSlug = challengeData.dataset.slug;
-    const csrfToken = document.querySelector("[name=csrfmiddlewaretoken]").value;
-
-    const spinner = submitBtn.querySelector(".spinner");
-    const btnText = submitBtn.querySelector(".btn-text");
-
+    const submitBtn      = document.getElementById("submit-btn");
+    const codeEditor     = document.getElementById("code-editor");
+    const resultDiv      = document.getElementById("submission-result");
+    const challengeData  = document.getElementById("challenge-data");
     const submissionList = document.getElementById("submission-list");
+    const csrfToken      = document.querySelector("[name=csrfmiddlewaretoken]")?.value || "";
 
-    // Hide all submission code blocks initially
+    const challengeSlug  = challengeData ? challengeData.dataset.slug : null;
+
+    // ------------------------------------------------------------------
+    // 1) VIEW / HIDE CODE IN HISTORY  (works for existing + new cards)
+    // ------------------------------------------------------------------
+
+    function hideAllCodeBlocks() {
+        if (!submissionList) return;
+
+        submissionList.querySelectorAll(".submission-code").forEach(block => {
+            block.style.display = "none";
+        });
+
+        submissionList.querySelectorAll(".view-code-btn").forEach(btn => {
+            btn.innerHTML = '<i class="fas fa-eye"></i> View Code';
+        });
+    }
+
+    // Hide all code blocks initially (for server-rendered cards)
     if (submissionList) {
         submissionList.querySelectorAll(".submission-code").forEach(block => {
             block.style.display = "none";
         });
+
+        submissionList.addEventListener("click", (e) => {
+            const button = e.target.closest(".view-code-btn");
+            if (!button) return;
+
+            const submissionItem = button.closest(".submission-item");
+            if (!submissionItem) return;
+
+            const codeBlock = submissionItem.querySelector(".submission-code");
+            if (!codeBlock) return;
+
+            const isCurrentlyHidden =
+                codeBlock.style.display === "none" ||
+                getComputedStyle(codeBlock).display === "none";
+
+            // Close everything
+            hideAllCodeBlocks();
+
+            if (isCurrentlyHidden) {
+                // Open this one
+                codeBlock.style.display = "block";
+                button.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Code';
+
+                // Optional: syntax highlighting
+                if (window.Prism) {
+                    const innerCode = codeBlock.querySelector("code");
+                    if (innerCode) {
+                        Prism.highlightElement(innerCode);
+                    }
+                }
+            } else {
+                // Was visible -> now closed (already handled by hideAllCodeBlocks)
+                button.innerHTML = '<i class="fas fa-eye"></i> View Code';
+            }
+        });
     }
 
-    // Count visible submission cards
+    // ------------------------------------------------------------------
+    // If we do not have the elements needed for submitting/tests, stop here
+    // (view/hide code above will still work).
+    // ------------------------------------------------------------------
+    if (!submitBtn || !codeEditor || !resultDiv || !challengeData || !csrfToken || !submissionList || !challengeSlug) {
+        return;
+    }
+
+    const spinner = submitBtn.querySelector(".spinner");
+    const btnText = submitBtn.querySelector(".btn-text");
+
+    // How many submission cards are already visible?
     function getCurrentSubmissionCount() {
         if (!submissionList) return 0;
         return submissionList.querySelectorAll(".submission-item").length;
     }
 
-    // ===========================
-    // SUBMIT SOLUTION (AJAX)
-    // ===========================
+    // ------------------------------------------------------------------
+    // 2) SUBMIT SOLUTION (AJAX)
+    // ------------------------------------------------------------------
     submitBtn.addEventListener("click", async (e) => {
         e.preventDefault();
 
@@ -38,8 +97,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         submitBtn.disabled = true;
-        spinner.style.display = "inline-block";
-        btnText.textContent = "Submitting...";
+        if (spinner) spinner.style.display = "inline-block";
+        if (btnText) btnText.textContent = "Submitting...";
 
         const form = submitBtn.closest("form");
         const formData = new FormData(form);
@@ -62,9 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const data = await response.json(); // { status, results, submission_id, ... }
 
             if (response.ok) {
-                // Next visible number = how many cards are currently on the page + 1
                 const nextNumber = getCurrentSubmissionCount() + 1;
-                console.log("Next submission number:", nextNumber);
 
                 resultDiv.innerHTML = `
                     <span style="color:${data.status === "passed" ? "green" : "red"};">
@@ -112,7 +169,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     newCodeBlock.style.display = "none";
                 }
 
-                // Put newest on top (same as template order)
+                // Newest first
                 submissionList.prepend(newCard);
                 codeEditor.value = "";
             } else {
@@ -122,26 +179,26 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error(err);
             resultDiv.innerHTML = `<span style="color:red;">An unexpected error occurred while submitting.</span>`;
         } finally {
-            spinner.style.display = "none";
-            btnText.textContent = "Submit Solution";
+            if (spinner) spinner.style.display = "none";
+            if (btnText) btnText.textContent = "Submit Solution";
             submitBtn.disabled = false;
         }
     });
 
-    // ===========================
-    // RUN TESTS (AJAX)
-    // ===========================
+    // ------------------------------------------------------------------
+    // 3) RUN TESTS (AJAX)
+    // ------------------------------------------------------------------
     window.runTests = async function (button) {
-        const spinner = button.querySelector(".spinner");
-        const resultsDiv = document.getElementById("test-results");
-        const code = codeEditor.value.trim();
+        const testSpinner = button.querySelector(".spinner");
+        const resultsDiv  = document.getElementById("test-results");
+        const code        = codeEditor.value.trim();
 
         if (!code) {
             resultsDiv.innerHTML = `<p style="color:red;">Please enter code before running tests.</p>`;
             return;
         }
 
-        spinner.style.display = "inline-block";
+        if (testSpinner) testSpinner.style.display = "inline-block";
         resultsDiv.innerHTML = `<p style="color:var(--text-secondary);">Running tests...</p>`;
 
         const formData = new FormData();
@@ -197,48 +254,7 @@ document.addEventListener("DOMContentLoaded", () => {
             console.error(err);
             resultsDiv.innerHTML = `<p style="color:red;">An error occurred while running tests.</p>`;
         } finally {
-            spinner.style.display = "none";
+            if (testSpinner) testSpinner.style.display = "none";
         }
     };
-
-    // ===========================
-    // VIEW / HIDE CODE IN HISTORY
-    // ===========================
-    if (submissionList) {
-        submissionList.addEventListener("click", (e) => {
-            const button = e.target.closest(".view-code-btn");
-            if (!button) return;
-
-            const submissionItem = button.closest(".submission-item");
-            const codeBlock = submissionItem.querySelector(".submission-code");
-            if (!codeBlock) return;
-
-            const isHidden =
-                codeBlock.style.display === "none" ||
-                getComputedStyle(codeBlock).display === "none";
-
-            // Hide all other code blocks
-            submissionList.querySelectorAll(".submission-code").forEach(block => {
-                block.style.display = "none";
-            });
-            submissionList.querySelectorAll(".view-code-btn").forEach(btn => {
-                btn.innerHTML = '<i class="fas fa-eye"></i> View Code';
-            });
-
-            if (isHidden) {
-                codeBlock.style.display = "block";
-                button.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Code';
-
-                if (window.Prism) {
-                    const innerCode = codeBlock.querySelector("code");
-                    if (innerCode) {
-                        Prism.highlightElement(innerCode);
-                    }
-                }
-            } else {
-                codeBlock.style.display = "none";
-                button.innerHTML = '<i class="fas fa-eye"></i> View Code';
-            }
-        });
-    }
 });
