@@ -528,7 +528,6 @@ class ChallengeDetailView(View):
 
 
 @require_POST
-@require_POST
 def challenge_submit(request, challenge_slug):
     try:
         if not request.user.is_authenticated:
