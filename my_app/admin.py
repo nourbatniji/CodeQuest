@@ -33,7 +33,7 @@ class ChallengeAdmin(admin.ModelAdmin):
         'input_description', 'output_description',
         'sample_input', 'sample_output', 'example_explanation',
         'constraints', 'starter_code', 'hidden_tests',
-        'difficulty', 'tags', 'created_at'
+        'difficulty', 'tags','points', 'created_at'
     ]
     readonly_fields = ['created_at']
 
