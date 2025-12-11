@@ -1,11 +1,5 @@
 // SUBMISSION + CHALLENGE LOGIC
 
-// How many submission cards are already visible?
-function getCurrentSubmissionCount(submissionList) {
-    if (!submissionList) return 0;
-    return submissionList.querySelectorAll(".submission-item").length;
-}
-
 // Expose runTests globally for the button onclick
 window.runTests = async function (button) {
     const codeEditor = document.getElementById("code-editor");
@@ -228,102 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const spinner = submitBtn.querySelector(".spinner");
         const btnText = submitBtn.querySelector(".btn-text");
 
-        submitBtn.addEventListener("click", async (e) => {
-            e.preventDefault();
-
-            const code = codeEditor.value.trim();
-            if (!code) {
-                resultDiv.innerHTML = `<span style="color:red;">Please enter code before submitting.</span>`;
-                return;
-            }
-
-            submitBtn.disabled = true;
-            if (spinner) spinner.style.display = "inline-block";
-            if (btnText) btnText.textContent = "Submitting...";
-
-            const form = submitBtn.closest("form");
-            const formData = new FormData(form);
-
-            try {
-                const response = await fetch(form.action, {
-                    method: "POST",
-                    headers: {
-                        "X-CSRFToken": csrfToken,
-                        "X-Requested-With": "XMLHttpRequest",
-                    },
-                    body: formData,
-                });
-
-                const isJson = response.headers.get("content-type")?.includes("application/json");
-                if (!isJson) {
-                    throw new Error("Non-JSON response from server");
-                }
-
-                const data = await response.json(); // { status, results, submission_id, ... }
-
-                if (response.ok) {
-                    const nextNumber = getCurrentSubmissionCount(submissionList) + 1;
-
-                    resultDiv.innerHTML = `
-                        <span style="color:${data.status === "passed" ? "green" : "red"};">
-                            Submission #${nextNumber}: ${data.status.toUpperCase()}
-                        </span>
-                    `;
-
-                    const noSubMsg = document.getElementById("no-submissions");
-                    if (noSubMsg) noSubMsg.remove();
-
-                    const newCard = document.createElement("div");
-                    newCard.className = "submission-item animate-fade-in";
-                    newCard.dataset.id = data.submission_id || "";
-
-                    const escapedCode = code
-                        .replace(/</g, "&lt;")
-                        .replace(/>/g, "&gt;");
-
-                    newCard.innerHTML = `
-                        <div>
-                            <div class="submission-header"
-                                 style="font-weight:600;color:var(--text-primary);margin-bottom:0.25rem;">
-                                Submission #${nextNumber}
-                            </div>
-                            <div style="font-size:0.875rem;color:var(--text-secondary);">
-                                <i class="fas fa-clock"></i> just now
-                            </div>
-                        </div>
-                        <pre class="submission-code"
-                             style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;
-                                    padding:0.75rem;font-size:0.875rem;white-space:pre-wrap;
-                                    overflow-x:auto;font-family:Menlo,Monaco,Consolas,'Courier New',monospace;">
-${escapedCode}
-                        </pre>
-                        <div style="display:flex;gap:1rem;align-items:center;">
-                            <span class="badge-modern"
-                                  style="background-color:${data.status === "passed"
-                                      ? "rgba(16,185,129,0.1)" : "rgba(248,113,113,0.1)"};color:var(--success);">
-                                <i class="fas fa-check-circle"></i> ${data.status}
-                            </span>
-                            <button class="view-code-btn btn-modern btn-secondary" style="padding:0.5rem 1rem;">
-                                <i class="fas fa-eye"></i> View Code
-                            </button>
-                        </div>
-                    `;
-
-                    submissionList.prepend(newCard);
-                    codeEditor.value = "";
-                } else {
-                    resultDiv.innerHTML = `<span style="color:red;">${data.error || "Submission failed."}</span>`;
-                }
-            } catch (err) {
-                console.error(err);
-                resultDiv.innerHTML = `<span style="color:red;">An unexpected error occurred while submitting.</span>`;
-            } finally {
-                if (spinner) spinner.style.display = "none";
-                if (btnText) btnText.textContent = "Submit Solution";
-                submitBtn.disabled = false;
-            }
-        });
-
+    
         // View / hide code in history
         submissionList.addEventListener("click", (e) => {
             const button = e.target.closest(".view-code-btn");

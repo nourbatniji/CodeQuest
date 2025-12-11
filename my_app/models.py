@@ -183,9 +183,9 @@ class Challenge(models.Model):
 
 class Submission(models.Model):
     STATUS_CHOICES = [
-        ("pending", "Pending"),
         ("passed", "Passed"),
         ("failed", "Failed"),
+        ("error", "Error"),
     ]
 
     LANGUAGE_CHOICES = [
