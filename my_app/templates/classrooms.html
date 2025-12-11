@@ -8,13 +8,116 @@
 {% endblock %}
 
 {% block content %}
-<!-- Page Header -->
+<!-- Page Header - Different for Mentors vs Students -->
+{% if user.is_staff %}
+<div class="dashboard-header animate-fade-in">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div>
+            <h1>My Classrooms</h1>
+            <p>Manage your classrooms and track student progress</p>
+        </div>
+        <button class="btn-modern btn-primary" onclick="openCreateClassroomModal()"
+            style="background: white; color: var(--primary-600);">
+            <i class="fas fa-plus"></i> Create New Classroom
+        </button>
+    </div>
+</div>
+
+<!-- Mentor Stats -->
+<div class="stats-grid animate-fade-in">
+    <div class="stat-card">
+        <div class="stat-card-icon primary">
+            <i class="fas fa-chalkboard"></i>
+        </div>
+        <div class="stat-card-value">{{ mentor_active_classrooms }}</div>
+        <div class="stat-card-label">Active Classrooms</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-icon success">
+            <i class="fas fa-user-graduate"></i>
+        </div>
+        <div class="stat-card-value">{{ mentor_total_students }}</div>
+        <div class="stat-card-label">Total Students</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-icon warning">
+            <i class="fas fa-tasks"></i>
+        </div>
+        <div class="stat-card-value">{{ mentor_total_challenges }}</div>
+        <div class="stat-card-label">Total Challenges</div>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card-icon info">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="stat-card-value">{{ mentor_avg_completion }}%</div>
+        <div class="stat-card-label">Avg. Completion</div>
+    </div>
+</div>
+
+
+<!-- Mentor Filters -->
+<div class="leaderboard-filters animate-fade-in" style="margin-bottom: 2rem;">
+    <div class="filter-row">
+        <div class="filter-group" style="flex: 2;">
+            <label class="filter-label">Search My Classrooms</label>
+            <input type="text" class="form-control-modern" placeholder="Search by name..." id="searchClassrooms">
+        </div>
+        <div class="filter-group">
+            <label class="filter-label">Filter By</label>
+            <select class="filter-select">
+                <option>All Classrooms</option>
+                <option>Most Active</option>
+                <option>Needs Attention</option>
+                <option>Recently Updated</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Student View Header -->
 <div class="dashboard-header animate-fade-in">
     <h1><i class="fas fa-users"></i> Explore Classrooms</h1>
     <p>Join classrooms and start learning with expert mentors</p>
 </div>
 
-<!-- Search and Filter -->
+<!-- Student Stats -->
+<div class="stats-grid animate-fade-in">
+    <div class="stat-card">
+        <div class="stat-card-icon primary">
+            <i class="fas fa-door-open"></i>
+        </div>
+        <div class="stat-card-value">{{ joined_classrooms_count }}</div>
+        <div class="stat-card-label">Enrolled Classrooms</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon success">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <div class="stat-card-value">{{ total_completed_challenges }}</div>
+        <div class="stat-card-label">Challenges Completed</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon warning">
+            <i class="fas fa-fire"></i>
+        </div>
+        <div class="stat-card-value">{{ user.streak|default:0 }}</div>
+        <div class="stat-card-label">Day Streak</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon info">
+            <i class="fas fa-trophy"></i>
+        </div>
+        <div class="stat-card-value">#{{ user.streak|default:0 }}</div>
+        <div class="stat-card-label">Global Rank</div>
+    </div>
+</div>
+
+<!-- Student Filters -->
 <div class="leaderboard-filters animate-fade-in" style="margin-bottom: 2rem;">
     <div class="filter-row">
         <div class="filter-group" style="flex: 2;">
@@ -32,54 +135,128 @@
         </div>
     </div>
 </div>
-
+{% endif %}
 
 <!-- Classrooms Grid -->
 <div class="classroom-grid animate-fade-in">
-    {% for c in classrooms %}
+    {% for classroom in classrooms %}
+    <!-- Classroom Card -->
     <div class="classroom-card">
         <div class="classroom-card-header">
-            <h3>{{ c.name }}</h3>
-            <p>{{ c.description|default:"No description yet." }}</p>
+            <h3>{{ classroom.name }}</h3>
+            <p>{{ classroom.description }}</p>
         </div>
         <div class="classroom-card-body">
             <div class="classroom-meta">
                 <div class="classroom-meta-item">
                     <i class="fas fa-user-tie"></i>
-                    <span>{{ c.mentor.username }}</span>
+                    <span>{{ classroom.mentor.username }}</span>
                 </div>
                 <div class="classroom-meta-item">
                     <i class="fas fa-users"></i>
-                    <span>{{ c.members_count }} members</span>
+                    <span>{{ classroom.members_count }} members</span>
                 </div>
             </div>
             <div class="classroom-meta">
                 <div class="classroom-meta-item">
                     <i class="fas fa-code"></i>
-                    <span>{{ c.challenges.count }} challenges</span>
-                </div>
-                <div class="classroom-meta-item">
-                    <i class="fas fa-clock"></i>
-                    <span>Created {{ c.created_at|date:"M d, Y" }}</span>
+                    <span>{{ classroom.challenges.count }} challenges</span>
                 </div>
             </div>
         </div>
-        <div class="classroom-card-footer">
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">
-                <i class="fas fa-clock"></i>
-                Updated {{ c.created_at|date:"M d, Y" }}
-            </span>
-            <a href="{% url 'classroom_detail' slug=c.slug %}">
-                <button class="btn-modern btn-primary">
-                    <i class="fas fa-arrow-right"></i> View
-                </button>
-            </a>
-        </div>
+       <div class="classroom-card-footer">
+    <span style="font-size: 0.875rem; color: var(--text-secondary);">
+        <i class="fas fa-clock"></i>
+        Updated {{ classroom.updated_at|date:"M d, Y, g:i a" }}
+    </span>
+
+    {% if user.is_staff %}
+    <div style="display: flex; gap: 0.5rem;">
+        <button class="btn-modern btn-secondary"
+                onclick="window.location.href='{% url "classroom_detail" classroom.slug %}'">
+            <i class="fas fa-cog"></i> Manage
+        </button>
+        <button class="btn-modern btn-primary"
+                onclick="window.location.href='{% url "classroom_detail" classroom.slug %}'">
+            <i class="fas fa-chart-bar"></i> Analytics
+        </button>
     </div>
-    {% empty %}
-        <p>No classrooms yet. Ask a mentor to create one in the admin.</p>
+    {% else %}
+    <button class="btn-modern btn-primary"
+            onclick="window.location.href='{% url "classroom_detail" classroom.slug %}'">
+        <i class="fas fa-arrow-right"></i> View
+    </button>
+    {% endif %}
+</div>
+
+    </div>
     {% endfor %}
 </div>
 
+<!-- Create Classroom Modal (Mentor Only) -->
+<div id="createClassroomModal"
+    style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center;">
+    <div
+        style="background: var(--surface); border-radius: var(--radius-lg); padding: 2rem; max-width: 500px; width: 90%; box-shadow: var(--shadow-lg);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h2 style="margin: 0; color: var(--text-primary);"><i class="fas fa-plus-circle"></i> Create New Classroom
+            </h2>
+            <button onclick="closeCreateClassroomModal()"
+                style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <form>
+            <div style="margin-bottom: 1rem;">
+                <label
+                    style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 600;">Classroom
+                    Name</label>
+                <input type="text" class="form-control-modern" placeholder="e.g., Advanced Python Programming" required>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label
+                    style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 600;">Description</label>
+                <textarea class="form-control-modern" rows="3" placeholder="Brief description of the classroom..."
+                    required></textarea>
+            </div>
+            <div style="margin-bottom: 1rem;">
+                <label
+                    style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 600;">Difficulty
+                    Level</label>
+                <select class="filter-select" style="width: 100%;">
+                    <option>Beginner</option>
+                    <option>Intermediate</option>
+                    <option>Advanced</option>
+                    <option>All Levels</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
+                <button type="button" class="btn-modern btn-secondary" onclick="closeCreateClassroomModal()">
+                    Cancel
+                </button>
+                <button type="submit" class="btn-modern btn-primary">
+                    <i class="fas fa-check"></i> Create Classroom
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function openCreateClassroomModal() {
+        document.getElementById('createClassroomModal').style.display = 'flex';
+    }
+
+    function closeCreateClassroomModal() {
+        document.getElementById('createClassroomModal').style.display = 'none';
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('createClassroomModal')?.addEventListener('click', function (e) {
+        if (e.target === this) {
+            closeCreateClassroomModal();
+        }
+    });
+</script>
 
 {% endblock %}

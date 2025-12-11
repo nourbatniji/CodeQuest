@@ -17,22 +17,22 @@
 <!-- Quick Stats -->
 <div class="stats-grid animate-fade-in">
     <div class="stat-card">
-        <div class="stat-card-value">3</div>
+        <div class="stat-card-value">{{ total_classrooms }}</div>
         <div class="stat-card-label">My Classrooms</div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-card-value">135</div>
+        <div class="stat-card-value">{{ total_students }}</div>
         <div class="stat-card-label">Total Students</div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-card-value">47</div>
+        <div class="stat-card-value">{{ total_challenges }}</div>
         <div class="stat-card-label">Total Challenges</div>
     </div>
 
     <div class="stat-card">
-        <div class="stat-card-value">892</div>
+        <div class="stat-card-value">{{ total_submissions }}</div>
         <div class="stat-card-label">Submissions</div>
     </div>
 </div>
@@ -65,88 +65,81 @@
 </div>
 
 <div class="classroom-grid animate-fade-in">
-    <!-- Classroom Card 1 -->
-    <div class="classroom-card" onclick="window.location.href='/classroom/1'">
-        <div class="classroom-card-header">
-            <h3>Python Fundamentals</h3>
-        </div>
-        <div class="classroom-card-body">
-            <div class="classroom-meta">
-                <div class="classroom-meta-item">
-                    <i class="fas fa-users"></i>
-                    <span>45 students</span>
+    {% if classrooms %}
+        {% for classroom in classrooms %}
+            <div class="classroom-card"
+                 onclick="window.location.href='{% url 'classroom_detail' classroom.slug %}'">
+                <div class="classroom-card-header">
+                    {# Adjust classroom.title / classroom.name as needed #}
+                    <h3>{{ classroom.name }}</h3>
                 </div>
-                <div class="classroom-meta-item">
-                    <i class="fas fa-code"></i>
-                    <span>12 challenges</span>
+                <div class="classroom-card-body">
+                    <div class="classroom-meta">
+                        <div class="classroom-meta-item">
+                            <i class="fas fa-users"></i>
+                            <span>{{ classroom.students_count }} students</span>
+                        </div>
+                        <div class="classroom-meta-item">
+                            <i class="fas fa-code"></i>
+                            <span>{{ classroom.challenges_count }} challenges</span>
+                        </div>
+                    </div>
+                    <div class="classroom-meta">
+                        <div class="classroom-meta-item">
+                            <i class="fas fa-check-circle"></i>
+                            <span>{{ classroom.submissions_count }} submissions</span>
+                        </div>
+                        <div class="classroom-meta-item">
+                            <i class="fas fa-chart-line"></i>
+                            {# For now, just show "N/A" or a placeholder until you compute it #}
+                            <span>N/A avg completion</span>
+                        </div>
+                    </div>
                 </div>
-            </div>
-            <div class="classroom-meta">
-                <div class="classroom-meta-item">
-                    <i class="fas fa-check-circle"></i>
-                    <span>234 submissions</span>
-                </div>
-                <div class="classroom-meta-item">
-                    <i class="fas fa-chart-line"></i>
-                    <span>67% avg completion</span>
-                </div>
-            </div>
-        </div>
-        <div class="classroom-card-footer">
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">
-                <i class="fas fa-clock"></i> Active
-            </span>
-            <button class="btn-modern btn-primary"
-                onclick="event.stopPropagation(); window.location.href='/classroom/1'">
-                <i class="fas fa-eye"></i> View
-            </button>
-        </div>
-    </div>
-
-    <!-- Classroom Card 2 -->
-    <div class="classroom-card" onclick="window.location.href='/classroom/2'">
-        <div class="classroom-card-header">
-            <h3>Data Structures & Algorithms</h3>
-        </div>
-        <div class="classroom-card-body">
-            <div class="classroom-meta">
-                <div class="classroom-meta-item">
-                    <i class="fas fa-users"></i>
-                    <span>38 students</span>
-                </div>
-                <div class="classroom-meta-item">
-                    <i class="fas fa-code"></i>
-                    <span>20 challenges</span>
+                <div class="classroom-card-footer">
+                    <span style="font-size: 0.875rem; color: var(--text-secondary);">
+                        <i class="fas fa-clock"></i> Active
+                    </span>
+                    <button class="btn-modern btn-primary"
+                            onclick="event.stopPropagation(); window.location.href='{% url 'classroom_detail' classroom.slug %}'">
+                        <i class="fas fa-eye"></i> View
+                    </button>
                 </div>
             </div>
-            <div class="classroom-meta">
-                <div class="classroom-meta-item">
-                    <i class="fas fa-check-circle"></i>
-                    <span>412 submissions</span>
-                </div>
-                <div class="classroom-meta-item">
-                    <i class="fas fa-chart-line"></i>
-                    <span>54% avg completion</span>
-                </div>
-            </div>
-        </div>
-        <div class="classroom-card-footer">
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">
-                <i class="fas fa-clock"></i> Active
-            </span>
-            <button class="btn-modern btn-primary"
-                onclick="event.stopPropagation(); window.location.href='/classroom/2'">
-                <i class="fas fa-eye"></i> View
-            </button>
-        </div>
-    </div>
-
-   
+        {% endfor %}
+    {% else %}
+        <p>No classrooms found yet. Create one from the Quick Actions above.</p>
+    {% endif %}
 </div>
 
 <!-- Recent Activity -->
 <div class="section-header" style="margin-top: 2rem;">
     <h2><i class="fas fa-history"></i> Recent Submissions</h2>
+</div>
+
+<div class="recent-activity animate-fade-in">
+    {% if recent_submissions %}
+        <ul class="activity-list">
+            {% for submission in recent_submissions %}
+                <li class="activity-item">
+                    <div>
+                        <strong>{{ submission.user.username }}</strong>
+                        submitted
+                        <strong>{{ submission.challenge.title }}</strong>
+                        <!-- adjust field names if needed -->
+                    </div>
+                    <div class="activity-meta">
+                        <span>{{ submission.created_at|date:"M d, Y H:i" }}</span>
+                        {% if submission.status %}
+                            <span class="badge badge-small">{{ submission.status }}</span>
+                        {% endif %}
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No recent submissions.</p>
+    {% endif %}
 </div>
 
 {% endblock %}
