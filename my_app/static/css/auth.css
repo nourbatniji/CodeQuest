@@ -58,25 +58,60 @@
 
 .form-control-modern {
     width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--border-color);
+    padding: 0.875rem 1rem;
+    border: 2px solid var(--border-color);
     border-radius: var(--radius-md);
-    background-color: var(--bg-secondary);
+    background-color: var(--bg-primary);
     color: var(--text-primary);
-    font-size: 1rem;
+    font-size: 0.9375rem;
+    font-family: inherit;
     transition: all var(--transition-fast);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.form-control-modern:hover {
+    border-color: var(--primary-400);
+    background-color: var(--bg-primary);
 }
 
 .form-control-modern:focus {
     outline: none;
     border-color: var(--primary-500);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.1);
     background-color: var(--bg-primary);
 }
 
 .form-control-modern::placeholder {
     color: var(--text-tertiary);
+    font-size: 0.9375rem;
 }
+
+/* Textarea specific styling */
+textarea.form-control-modern {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.6;
+}
+
+/* Select styling */
+select.form-control-modern {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%230ea5e9' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+    font-weight: 500;
+}
+
+select.form-control-modern:hover {
+    border-color: var(--primary-500);
+}
+
+select.form-control-modern:focus {
+    border-color: var(--primary-500);
+}
+
 
 .input-group-modern {
     position: relative;
