@@ -174,13 +174,20 @@
 </div>
 
 
-<!-- Classroom Leaderboard -->
-<div class="section-header" style="margin-top: 2rem;">
-    <h2><i class="fas fa-trophy"></i> Classroom Leaderboard</h2>
-    <a href="/leaderboard/">
-        View Global <i class="fas fa-arrow-right"></i>
-    </a>
-</div>
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4 shadow-sm">
+                <div class="card-body">
+                    <h4 class="card-title mb-2">About this classroom</h4>
+                    <p class="card-text">
+                        {{ classroom.description|default:"No description added yet." }}
+                    </p>
+                    <p class="card-text mb-0">
+                        <strong>Created at:</strong>
+                        {{ classroom.created_at|date:"M d, Y" }}
+                    </p>
+                </div>
+            </div>
 
 <div class="leaderboard-table-container animate-fade-in">
     <table class="leaderboard-table">
