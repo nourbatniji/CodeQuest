@@ -27,7 +27,7 @@ urlpatterns = [
     path("leaderboard/", views.leaderboard_page, name="leaderboard"),
     path("leaderboard/classroom/<int:classroom_id>/",views.leaderboard_page,name="classroom_leaderboard",),
 
-    path("profile/", views.profile_page, name="profile"),
+    path("profile/", views.profile_page, name="profile"),              
     path("mentor_dashboard/", views.mentor_dashboard, name="mentor_dashboard"),
 
     path("classrooms/", views.classrooms_page, name="classrooms_page"),
@@ -37,5 +37,10 @@ urlpatterns = [
     path("classroom/<slug:slug>/join/", views.join_classroom, name="join_classroom"),
     path("classroom/<slug:slug>/leave/", views.leave_classroom, name="leave_classroom"),
     path("mentor/challenges/<slug:challenge_slug>/edit/",views.mentor_edit_challenge,name="mentor_edit_challenge",),
+
+
+    path("profile/<str:username>/", views.profile_page, name="profile_detail"),  # any user
+
+
 
 ]

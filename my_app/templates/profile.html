@@ -1,404 +1,187 @@
 {% extends 'base.html' %}
 
-{% block title %}Profile - CodeQuest{% endblock %}
+{% block title %}{{ profile_user.username }}'s Profile - CodeQuest{% endblock %}
 
 {% block extra_css %}
 {% load static %}
 <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'css/leaderboard.css' %}">
-<style>
-    .profile-header {
-        background: linear-gradient(135deg, var(--primary-600), var(--primary-700));
-        border-radius: var(--radius-lg);
-        padding: 2rem;
-        margin-bottom: 2rem;
-        color: white;
-        display: flex;
-        align-items: center;
-        gap: 2rem;
-    }
-
-    .profile-avatar {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, var(--accent-cyan), var(--accent-teal));
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 3rem;
-        font-weight: 700;
-        border: 4px solid rgba(255, 255, 255, 0.3);
-        flex-shrink: 0;
-    }
-
-    .profile-info {
-        flex: 1;
-    }
-
-    .profile-name {
-        font-size: 2rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-    }
-
-    .profile-username {
-        font-size: 1rem;
-        opacity: 0.9;
-        margin-bottom: 0.5rem;
-    }
-
-    .profile-bio {
-        font-size: 0.95rem;
-        opacity: 0.85;
-        margin-top: 1rem;
-        max-width: 600px;
-    }
-
-    .achievement-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 1rem;
-        margin-bottom: 2rem;
-    }
-
-    .achievement-card {
-        background: var(--surface);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        padding: 1.5rem;
-        text-align: center;
-        transition: all var(--transition-base);
-    }
-
-    .achievement-card:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-md);
-    }
-
-    .achievement-icon {
-        width: 60px;
-        height: 60px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.75rem;
-        margin: 0 auto 1rem;
-    }
-
-    .achievement-icon.warning {
-        background: rgba(245, 158, 11, 0.1);
-        color: var(--warning);
-    }
-
-    .achievement-icon.primary {
-        background: rgba(99, 102, 241, 0.1);
-        color: var(--primary-500);
-    }
-
-    .achievement-icon.success {
-        background: rgba(16, 185, 129, 0.1);
-        color: var(--success);
-    }
-
-    .achievement-icon.error {
-        background: rgba(239, 68, 68, 0.1);
-        color: var(--error);
-    }
-
-    .skill-bar {
-        margin-bottom: 1rem;
-    }
-
-    .skill-name {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 0.5rem;
-        font-size: 0.875rem;
-        color: var(--text-secondary);
-    }
-
-    .skill-progress {
-        height: 8px;
-        background: var(--bg-tertiary);
-        border-radius: var(--radius-full);
-        overflow: hidden;
-    }
-
-    .skill-progress-bar {
-        height: 100%;
-        background: linear-gradient(90deg, var(--primary-500), var(--accent-purple));
-        border-radius: var(--radius-full);
-        transition: width var(--transition-slow);
-    }
-
-    .activity-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 1rem;
-        background: var(--surface);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-md);
-        margin-bottom: 0.75rem;
-        transition: all var(--transition-fast);
-    }
-
-    .activity-item:hover {
-        border-color: var(--primary-500);
-        box-shadow: var(--shadow-sm);
-    }
-
-    .settings-section {
-        background: var(--surface);
-        border: 1px solid var(--border-color);
-        border-radius: var(--radius-lg);
-        padding: 1.5rem;
-    }
-
-    .settings-item {
-        padding: 1rem 0;
-        border-bottom: 1px solid var(--border-color);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .settings-item:last-child {
-        border-bottom: none;
-    }
-
-    @media (max-width: 768px) {
-        .profile-header {
-            flex-direction: column;
-            text-align: center;
-        }
-
-        .profile-avatar {
-            width: 100px;
-            height: 100px;
-            font-size: 2.5rem;
-        }
-
-        .profile-name {
-            font-size: 1.5rem;
-        }
-
-        .achievement-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-</style>
+<link rel="stylesheet" href="{% static 'css/profile.css' %}">
 {% endblock %}
 
 {% block content %}
+
 <!-- Profile Header -->
 <div class="profile-header animate-fade-in">
-    <div class="profile-avatar">
-        {{ user.full_name.0 }}
-    </div>
-    <div class="profile-info">
-        <div class="profile-name">{{ user.full_name }}</div>
-        <div class="profile-username">@{{ user.username }}</div>
-        <div style="display: flex; gap: 1rem; margin-top: 0.5rem; flex-wrap: wrap;">
-            <span><i class="fas fa-envelope"></i> {{ user.email }}</span>
-            <span><i class="fas fa-calendar"></i> Joined {{ user.joined_date }}</span>
+    <div class="profile-header-content">
+        <div class="profile-avatar-large">
+            {% if profile_user.profile.avatar %}
+            <img src="{{ profile_user.profile.avatar.url }}" alt="{{ profile_user.username }}">
+            {% else %}
+            <div class="avatar-placeholder">
+                {{ profile_user.username|first|upper }}
+            </div>
+            {% endif %}
         </div>
-        <p class="profile-bio">{{ user.bio }}</p>
-    </div>
-    <div>
-        <button class="btn-modern btn-secondary"
-            style="background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); color: white;">
-            <i class="fas fa-edit"></i> Edit Profile
-        </button>
+
+        <div class="profile-info">
+            <h1>{{ profile_user.username }}</h1>
+            <p class="profile-bio">{{ profile_user.profile.bio|default:"No bio added yet." }}</p>
+
+            <div class="profile-meta">
+                <div class="profile-meta-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Joined {{ profile_user.date_joined|date:"M Y" }}</span>
+                </div>
+                {% if profile_user.profile.location %}
+                <div class="profile-meta-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span>{{ profile_user.profile.location }}</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {% if user == profile_user %}
+        <div class="profile-actions">
+            <a href="" class="btn-modern btn-secondary">
+                <i class="fas fa-edit"></i> Edit Profile
+            </a>
+        </div>
+        {% endif %}
     </div>
 </div>
 
 <!-- Stats Grid -->
 <div class="stats-grid animate-fade-in">
     <div class="stat-card">
+        <div class="stat-card-icon primary">
+            <i class="fas fa-trophy"></i>
+        </div>
+<div class="stat-card-value">{{ total_points|default:0 }}</div>
+        <div class="stat-card-label">Total Points</div>
+    </div>
+
+    <div class="stat-card">
         <div class="stat-card-icon success">
             <i class="fas fa-check-circle"></i>
         </div>
-        <div class="stat-card-value">{{ stats.total_solved }}</div>
+<div class="stat-card-value">{{ solved_count|default:0 }}</div>
         <div class="stat-card-label">Challenges Solved</div>
     </div>
 
     <div class="stat-card">
         <div class="stat-card-icon warning">
-            <i class="fas fa-star"></i>
+            <i class="fas fa-fire"></i>
         </div>
-        <div class="stat-card-value">{{ stats.total_points }}</div>
-        <div class="stat-card-label">Total Points</div>
-    </div>
-
-    <div class="stat-card">
-        <div class="stat-card-icon primary">
-            <i class="fas fa-trophy"></i>
-        </div>
-        <div class="stat-card-value">#{{ stats.global_rank }}</div>
-        <div class="stat-card-label">Global Rank</div>
+        <div class="stat-card-value">{{ profile_user.profile.streak|default:0 }}</div>
+        <div class="stat-card-label">Day Streak</div>
     </div>
 
     <div class="stat-card">
         <div class="stat-card-icon info">
-            <i class="fas fa-fire"></i>
+            <i class="fas fa-medal"></i>
         </div>
-        <div class="stat-card-value">{{ stats.current_streak }}</div>
-        <div class="stat-card-label">Day Streak</div>
+        <div class="stat-card-value">{{ profile_user.profile.badges_count|default:0 }}</div>
+        <div class="stat-card-label">Badges Earned</div>
     </div>
 </div>
 
-<!-- Two Column Layout -->
-<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 2rem; margin-bottom: 2rem;">
-    <!-- Left Column -->
-    <div>
-        <!-- Achievements -->
+<!-- Recent Activity & Achievements -->
+<div class="profile-content-grid animate-fade-in">
+
+    <!-- Recent Activity -->
+    <div class="profile-section">
         <div class="section-header">
-            <h2><i class="fas fa-medal"></i> Achievements</h2>
+            <h2><i class="fas fa-history"></i> Recent Activity</h2>
         </div>
 
-        <div class="achievement-grid animate-fade-in">
-            {% for achievement in achievements %}
-            <div class="achievement-card">
-                <div class="achievement-icon {{ achievement.color }}">
-                    <i class="fas {{ achievement.icon }}"></i>
-                </div>
-                <h4 style="margin-bottom: 0.5rem; color: var(--text-primary);">{{ achievement.name }}</h4>
-                <p style="font-size: 0.875rem; color: var(--text-secondary); margin: 0;">{{ achievement.description }}
-                </p>
-            </div>
-            {% endfor %}
-        </div>
-
-        <!-- Recent Activity -->
-        <div class="section-header" style="margin-top: 2rem;">
-            <h2><i class="fas fa-history"></i> Recent Submissions</h2>
-            <a href="/challenges/">View All <i class="fas fa-arrow-right"></i></a>
-        </div>
-
-        <div class="animate-fade-in">
+        <div class="activity-list">
             {% for submission in recent_submissions %}
             <div class="activity-item">
-                <div>
-                    <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">
-                        {{ submission.challenge }}
-                    </div>
-                    <div style="font-size: 0.875rem; color: var(--text-secondary);">
-                        <i class="fas fa-clock"></i> {{ submission.date }}
-                    </div>
+                <div class="activity-icon {% if submission.status == 'passed' %}success{% else %}error{% endif %}">
+                    <i class="fas {% if submission.status == 'passed' %}fa-check{% else %}fa-times{% endif %}"></i>
                 </div>
-                <div style="display: flex; gap: 1rem; align-items: center;">
-                    {% if submission.status == 'passed' %}
-                    <span class="badge-modern"
-                        style="background-color: rgba(16, 185, 129, 0.1); color: var(--success);">
-                        <i class="fas fa-check-circle"></i> Passed
-                    </span>
-                    <span style="font-weight: 600; color: var(--warning);">+{{ submission.points }} pts</span>
-                    {% else %}
-                    <span class="badge-modern" style="background-color: rgba(239, 68, 68, 0.1); color: var(--error);">
-                        <i class="fas fa-times-circle"></i> Failed
-                    </span>
-                    {% endif %}
+                <div class="activity-content">
+                    <div class="activity-title">{{ submission.challenge.title }}</div>
+                    <div class="activity-time">{{ submission.created_at|timesince }} ago</div>
                 </div>
+                <span
+                    class="badge-modern {% if submission.status == 'passed' %}badge-passed{% else %}badge-failed{% endif %}">
+                    {{ submission.status|title }}
+                </span>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-inbox"></i>
+                </div>
+                <p>No recent activity</p>
             </div>
             {% endfor %}
         </div>
     </div>
 
-    <!-- Right Column -->
-    <div>
-        <!-- Skills Distribution -->
+    <!-- Achievements/Badges -->
+    <div class="profile-section">
         <div class="section-header">
-            <h2><i class="fas fa-chart-bar"></i> Skills</h2>
+            <h2><i class="fas fa-award"></i> Achievements</h2>
         </div>
 
-        <div class="card-modern animate-fade-in" style="margin-bottom: 2rem;">
-            {% for skill, count in skill_distribution.items %}
-            <div class="skill-bar">
-                <div class="skill-name">
-                    <span>{{ skill }}</span>
-                    <span style="font-weight: 600; color: var(--text-primary);">{{ count }}</span>
+        <div class="badges-grid">
+            {% for badge in badges %}
+            <div class="badge-card">
+                <div class="badge-icon">
+                    <i class="{{ badge.icon }}"></i>
                 </div>
-                <div class="skill-progress">
-                    <div class="skill-progress-bar" style="width: {{ count|add:count }}%;"></div>
+                <div class="badge-name">{{ badge.name }}</div>
+                <div class="badge-description">{{ badge.description }}</div>
+            </div>
+            {% empty %}
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-medal"></i>
                 </div>
+                <p>No badges earned yet</p>
             </div>
             {% endfor %}
-        </div>
-
-        <!-- Quick Stats -->
-        <div class="section-header">
-            <h2><i class="fas fa-chart-line"></i> Statistics</h2>
-        </div>
-
-        <div class="card-modern animate-fade-in">
-            <div style="padding: 1rem 0; border-bottom: 1px solid var(--border-color);">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: var(--text-secondary);">Classrooms Joined</span>
-                    <span style="font-weight: 600; color: var(--text-primary);">{{ stats.classrooms_joined }}</span>
-                </div>
-            </div>
-            <div style="padding: 1rem 0; border-bottom: 1px solid var(--border-color);">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: var(--text-secondary);">Current Streak</span>
-                    <span style="font-weight: 600; color: var(--warning);">{{ stats.current_streak }} days</span>
-                </div>
-            </div>
-            <div style="padding: 1rem 0;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: var(--text-secondary);">Longest Streak</span>
-                    <span style="font-weight: 600; color: var(--text-primary);">{{ stats.longest_streak }} days</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Account Settings -->
-        <div class="section-header" style="margin-top: 2rem;">
-            <h2><i class="fas fa-cog"></i> Settings</h2>
-        </div>
-
-        <div class="settings-section animate-fade-in">
-            <div class="settings-item">
-                <div>
-                    <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">Email
-                        Notifications</div>
-                    <div style="font-size: 0.875rem; color: var(--text-secondary);">Receive updates about your progress
-                    </div>
-                </div>
-                <label class="switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
-                    <input type="checkbox" checked style="opacity: 0; width: 0; height: 0;">
-                    <span
-                        style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--primary-500); border-radius: 24px; transition: 0.4s;"></span>
-                </label>
-            </div>
-            <div class="settings-item">
-                <div>
-                    <div style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">Public Profile
-                    </div>
-                    <div style="font-size: 0.875rem; color: var(--text-secondary);">Make your profile visible to others
-                    </div>
-                </div>
-                <label class="switch" style="position: relative; display: inline-block; width: 50px; height: 24px;">
-                    <input type="checkbox" checked style="opacity: 0; width: 0; height: 0;">
-                    <span
-                        style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--primary-500); border-radius: 24px; transition: 0.4s;"></span>
-                </label>
-            </div>
-            <div class="settings-item">
-                <button class="btn-modern btn-secondary" style="width: 100%;">
-                    <i class="fas fa-key"></i> Change Password
-                </button>
-            </div>
-            <div class="settings-item">
-                <button class="btn-modern"
-                    style="width: 100%; background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid var(--error);">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </button>
-            </div>
         </div>
     </div>
 </div>
 
+<!-- Skills & Progress -->
+<div class="section-header" style="margin-top: 2rem;">
+    <h2><i class="fas fa-chart-bar"></i> Skills</h2>
+</div>
+
+{% if skills %}
+<div class="skills-grid animate-fade-in">
+    {% for skill in skills %}
+    <div class="skill-card">
+        <div class="skill-header">
+            <span class="skill-name">{{ skill.name }}</span>
+            <span class="skill-percentage">{{ skill.percentage }}%</span>
+        </div>
+        <div class="progress-modern">
+            <div class="progress-bar-modern" style="width: {{ skill.percentage }}%;"></div>
+        </div>
+        <div class="skill-meta">
+            {{ skill.solved_count }} challenges solved
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <div class="empty-state-icon">
+        <i class="fas fa-chart-bar"></i>
+    </div>
+    <p>No skills data yet. Solve some challenges to build your stats!</p>
+</div>
+{% endif %}
+
+
 {% endblock %}
+
+
+

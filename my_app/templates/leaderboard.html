@@ -4,6 +4,7 @@
 
 {% block extra_css %}
 {% load static %}
+<link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
 <link rel="stylesheet" href="{% static 'css/leaderboard.css' %}">
 {% endblock %}
 
@@ -63,11 +64,9 @@
                 <select class="filter-select" name="classroom" onchange="this.form.submit()">
                     <option value="all">All Classrooms</option>
                     {% for classroom in classrooms %}
-                        <option value="{{ classroom.id }}" 
-                            {% if selected_classroom == classroom.id %}selected{% endif %}
-                        >
-                            {{ classroom.name }}
-                        </option>
+                    <option value="{{ classroom.id }}" {% if selected_classroom == classroom.id %}selected{% endif %}>
+                        {{ classroom.name }}
+                    </option>
                     {% endfor %}
                 </select>
             </div>
@@ -77,7 +76,8 @@
                 <label class="filter-label">Sort By</label>
                 <select class="filter-select" name="sort" onchange="this.form.submit()">
                     <option value="points" {% if selected_sort == 'points' %}selected{% endif %}>Points</option>
-                    <option value="challenges" {% if selected_sort == 'challenges' %}selected{% endif %}>Challenges Solved</option>
+                    <option value="challenges" {% if selected_sort == 'challenges' %}selected{% endif %}>Challenges Solved
+                    </option>
                     <option value="streak" {% if selected_sort == 'streak' %}selected{% endif %}>Streak</option>
                 </select>
             </div>
@@ -88,75 +88,141 @@
 
 <!-- Top Performers -->
 <div class="section-header">
-    <h2>Top Performers</h2>
+    <h2><i class="fas fa-star"></i> Top Performers</h2>
 </div>
 
 <div class="top-performers animate-fade-in">
     {% for profile in leaderboard|slice:":3" %}
 
-        {% if forloop.first %}
-            <div class="top-performer-card gold">
-        {% elif forloop.counter == 2 %}
-            <div class="top-performer-card silver">
-        {% else %}
+    {% if forloop.first %}
+    <div class="top-performer-card gold">
+        <div class="performer-rank" style="color: #fbbf24;">
+            <i class="fas fa-crown"></i>
+        </div>
+        {% elif forloop.counter  ==  2 %}
+        <div class="top-performer-card silver">
+            <div class="performer-rank" style="color: #94a3b8;">
+                <i class="fas fa-medal"></i>
+            </div>
+            {% else %}
             <div class="top-performer-card bronze">
-        {% endif %}
-
-            <div class="performer-name">{{ profile.user.username }}</div>
-            <div class="user-level">{{ profile.level }}</div>
-
-            <div class="performer-stats">
-                <div class="performer-stat">
-                    <div class="performer-stat-value">{{ profile.total_points }}</div>
-                    <div class="performer-stat-label">Points</div>
+                <div class="performer-rank" style="color: #f97316;">
+                    <i class="fas fa-medal"></i>
                 </div>
-                <div class="performer-stat">
-                    <div class="performer-stat-value">{{ profile.solved_count }}</div>
-                    <div class="performer-stat-label">Solved</div>
+                {% endif %}
+
+                <div class="performer-avatar"
+                    style="background: linear-gradient(135deg, 
+                {% if forloop.first %}#fbbf24, #f59e0b{% elif forloop.counter  ==  2 %}#94a3b8, #64748b{% else %}#f97316, #ea580c{% endif %}); 
+                display: flex; align-items: center; justify-content: center; color: white; font-size: 2rem; font-weight: 700;">
+                    {{ profile.user.username|first|upper }}
+                </div>
+
+                <div class="performer-name">{{ profile.user.username }}</div>
+                <div class="user-level">Level {{ profile.level|default:"1" }}</div>
+
+                <div class="performer-stats">
+                    <div class="performer-stat">
+                        <div class="performer-stat-value">{{ profile.total_points|default:0 }}</div>
+                        <div class="performer-stat-label">Points</div>
+                    </div>
+                    <div class="performer-stat">
+                        <div class="performer-stat-value">{{ profile.solved_count|default:0 }}</div>
+                        <div class="performer-stat-label">Solved</div>
+                    </div>
                 </div>
             </div>
+
+            {% empty %}
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; color: var(--text-secondary);">
+                <i class="fas fa-trophy"
+                    style="font-size: 4rem; margin-bottom: 1rem; color: var(--text-tertiary); display: block;"></i>
+                <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;">No Top Performers Yet</h3>
+                <p>Start solving challenges to claim the top spot!</p>
+            </div>
+            {% endfor %}
         </div>
 
-    {% endfor %}
-</div>
+        <!-- Full Leaderboard -->
+        <div class="section-header" style="margin-top: 2rem;">
+            <h2>Rankings</h2>
+        </div>
 
-<!-- Full Leaderboard -->
-<div class="section-header" style="margin-top: 2rem;">
-    <h2>Rankings</h2>
-</div>
+        <div class="leaderboard-table-container animate-fade-in">
+            <table class="leaderboard-table">
 
-<div class="leaderboard-table-container animate-fade-in">
-    <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>User</th>
+                        <th>Points</th>
+                        <th>Solved</th>
+                        <th>Badges</th>
+                        <th>Streak</th>
+                    </tr>
+                </thead>
 
-        <thead>
-            <tr>
-                <th>Rank</th>
-                <th>User</th>
-                <th>Points</th>
-                <th>Solved</th>
-                <th>Badges</th>
-                <th>Streak</th>
-            </tr>
-        </thead>
+                <tbody>
+                    {% for profile in leaderboard %}
+                    <tr {% if profile.user == user %}class="current-user" {% endif %}>
+                        <td class="rank-cell {% if forloop.counter <= 3 %}top-3{% endif %}">
+                            {% if forloop.counter  ==  1 %}
+                            <i class="fas fa-crown" style="color: #fbbf24; margin-right: 0.5rem;"></i>
+                            {% elif forloop.counter  ==  2 %}
+                            <i class="fas fa-medal" style="color: #94a3b8; margin-right: 0.5rem;"></i>
+                            {% elif forloop.counter  ==  3 %}
+                            <i class="fas fa-medal" style="color: #f97316; margin-right: 0.5rem;"></i>
+                            {% endif %}
+                            {{ forloop.counter }}
+                        </td>
+                        <td>
+                            <div class="user-cell">
+                              
+                                <div class="user-info">
+                                    <div class="user-name">{{ profile.user.username }}</div>
+                                    <div class="user-level">Level {{ profile.level|default:"1" }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="points-cell">{{ profile.total_points|default:0 }}</td>
+                        <td>{{ profile.solved_count|default:0 }}</td>
+                        <td>
+                            {% if profile.badges_count > 0 %}
+                            <span class="badge-modern badge-primary">
+                                <i class="fas fa-award"></i> {{ profile.badges_count }}
+                            </span>
+                            {% else %}
+                            <span style="color: var(--text-tertiary);">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if profile.streak > 0 %}
+                            <span style="color: var(--warning); font-weight: 600;">
+                                <i class="fas fa-fire"></i> {{ profile.streak }}
+                            </span>
+                            {% else %}
+                            <span style="color: var(--text-tertiary);">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                            <i class="fas fa-users"
+                                style="font-size: 3rem; margin-bottom: 1rem; color: var(--text-tertiary); display: block;"></i>
+                            No users on the leaderboard yet. Be the first to solve challenges!
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                </tbody>
 
-        <tbody>
-            {% for profile in leaderboard %}
-                <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td>{{ profile.user.username }}</td>
-                    <td>{{ profile.total_points }}</td>
-                    <td>{{ profile.solved_count }}</td>
-                    <td>{{ profile.badges_count }}</td>
-                    <td>{{ profile.streak|default:"-" }}</td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="6">No users yet</td>
-                </tr>
-            {% endfor %}
-        </tbody>
+            </table>
+        </div>
 
-    </table>
-</div>
+        {% endblock %}
 
-{% endblock %}
+
+
+
+        

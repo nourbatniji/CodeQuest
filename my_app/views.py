@@ -10,9 +10,10 @@ from .models import (
     Submission,
     Comment,
     check_user_badges,
+    User
 )
 from django.contrib import messages
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Q, Sum, F
 from .decorators import staff_or_superuser_required
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.http import JsonResponse
@@ -27,6 +28,15 @@ from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth.decorators import login_required
+from django.db.models.functions import Coalesce
+
+
+from django.contrib.auth.decorators import login_required
+from django.db.models import Count, Q, Value, IntegerField
+from django.shortcuts import render
+from django.utils import timezone
+
+from .models import Profile, Submission, Classroom, ClassroomMembership
 
 
 
@@ -139,132 +149,76 @@ def dashboard(request):
     return render(request, "dashboard.html", context)
 
 
-# --------------- LEADERBOARD ENGINE ---------------
-
-def _compute_leaderboard(timeframe="all", classroom_id=None, limit=100):
-    now = timezone.now()
-    submissions = Submission.objects.filter(status="passed")
-
-    # Time Filter
-    if timeframe == "week":
-        submissions = submissions.filter(created_at__gte=now - timedelta(days=7))
-    elif timeframe == "month":
-        submissions = submissions.filter(created_at__gte=now - timedelta(days=30))
-
-    # Classroom Filter
-    if classroom_id:
-        submissions = submissions.filter(challenge__classroom_id=classroom_id)
-
-    # Aggregation
-    aggregated = (
-        submissions.values("user", "user__username")
-        .annotate(total=Sum("points_awarded"))
-        .order_by("-total")[:limit]
-    )
-
-    # Fetch profiles
-    user_ids = [row["user"] for row in aggregated]
-    profiles = Profile.objects.filter(user_id__in=user_ids)
-    profile_map = {p.user_id: p for p in profiles}
-
-    # Final structured list
-    leaderboard = []
-    for index, row in enumerate(aggregated, start=1):
-        leaderboard.append(
-            {
-                "rank": index,
-                "user_id": row["user"],
-                "username": row.get("user__username"),
-                "total": row.get("total", 0),
-                "profile": profile_map.get(row["user"]),
-            }
-        )
-
-    return leaderboard
-
 @login_required
-def leaderboard_page(request):
-    if not request.user.is_authenticated:
-        return render(request, "not_found.html")
-
-    timeframe = request.GET.get("time", "all")  # all, week, month
-    classroom_param = request.GET.get("classroom")
-
-    try:
-        classroom_id = (
-            int(classroom_param)
-            if classroom_param is not None and classroom_param != "all"
-            else None
+def profile_page(request, username=None):
+    # 1) Which user's profile are we showing?
+    if username is None:
+        # /profile/  -> current logged-in user
+        profile_user = request.user
+    else:
+        # /profile/<username>/ -> lookup by username
+        profile_user = get_object_or_404(
+            User.objects.select_related("profile"),
+            username=username,
         )
-    except (TypeError, ValueError):
-        classroom_id = None
 
-    cache_key = f"leaderboard_{timeframe}_{classroom_id if classroom_id else 'all'}"
-    leaderboard = cache.get(cache_key)
-
-    if leaderboard is None:
-        leaderboard = _compute_leaderboard(
-            timeframe=timeframe, classroom_id=classroom_id, limit=200
-        )
-        cache.set(cache_key, leaderboard, timeout=300)
-
-    user_rank = None
-    for entry in leaderboard:
-        if entry.get("user_id") == request.user.id:
-            user_rank = entry.get("rank")
-            break
-
-    if not hasattr(request.user, "profile"):
-        Profile.objects.create(user=request.user)
-    user_points = request.user.profile.points
-
-    selected_classroom = classroom_id
-    selected_sort = request.GET.get("sort", "points")
-
-    context = {
-        "leaderboard": leaderboard,
-        "user_rank": user_rank,
-        "user_points": user_points,
-        "selected_time": timeframe,
-        "selected_classroom": selected_classroom,
-        "selected_sort": selected_sort,
-        "classrooms": Classroom.objects.all(),
-    }
-
-    return render(request, "leaderboard.html", context)
-
-@login_required
-def profile_page(request):
-    user = request.user
-
-    # كل البادجات يلي حقّقها
-    achievements = user.badges.all()
-
-    # آخر 10 تقديمات
-    recent_submissions = (
-        Submission.objects.filter(user=user)
-        .select_related("challenge")
-        .order_by("-created_at")[:10]
+    # 2) Total points = sum of points of all passed challenges
+    total_points_data = (
+        Submission.objects
+        .filter(user=profile_user, status="passed")
+        .aggregate(total=Sum("challenge__points"))
     )
+    total_points = total_points_data["total"] or 0
 
-    # عدد التحديات المحلولة فريد (بدون تكرار محاولات)
-    total_solved = (
-        Submission.objects.filter(user=user, status="passed")
-        .values("challenge")
+    # 3) Challenges solved = number of DISTINCT challenges with at least one passed submission
+    solved_count = (
+        Submission.objects
+        .filter(user=profile_user, status="passed")
+        .values("challenge_id")
         .distinct()
         .count()
     )
 
+    # 4) Recent submissions
+    recent_submissions = (
+        Submission.objects
+        .filter(user=profile_user)
+        .select_related("challenge")
+        .order_by("-created_at")[:10]
+    )
+
+    # 5) Badges (if you have a ManyToMany on Profile)
+    profile = profile_user.profile
+    badges = profile.badges.all() if hasattr(profile, "badges") else []
+
+    # 6) Skills (based on tags of passed submissions)
+    skills = []
+    tag_stats = (
+        Submission.objects
+        .filter(user=profile_user, status="passed", challenge__tags__isnull=False)
+        .values("challenge__tags__id", "challenge__tags__name")
+        .annotate(solved_count=Count("id"))
+        .order_by("-solved_count")
+    )
+
+    max_count = tag_stats[0]["solved_count"] if tag_stats else 0
+    for row in tag_stats[:6]:
+        percentage = int(row["solved_count"] / max_count * 100) if max_count else 0
+        skills.append({
+            "name": row["challenge__tags__name"],
+            "percentage": percentage,
+            "solved_count": row["solved_count"],
+        })
+
     context = {
-        "user": user,
-        "achievements": achievements,
+        "profile_user": profile_user,
         "recent_submissions": recent_submissions,
-        "total_solved": total_solved,
+        "badges": badges,
+        "skills": skills,
+        "total_points": total_points,
+        "solved_count": solved_count,
     }
-
     return render(request, "profile.html", context)
-
-
 @staff_or_superuser_required
 @login_required
 def mentor_dashboard(request):
@@ -677,6 +631,114 @@ def challenge_list(request):
     }
 
     return render(request, "challenges.html", context)
+
+
+# my_app/views.py
+
+from datetime import timedelta
+
+from django.contrib.auth.decorators import login_required
+from django.db.models import Count, Q, Value, IntegerField
+from django.shortcuts import render
+from django.utils import timezone
+
+from .models import Profile, Submission, Classroom, ClassroomMembership
+
+
+@login_required
+def leaderboard_page(request):
+    # ----------------- 1) Read filters from query string -----------------
+    selected_time = request.GET.get("time", "all")          # all | week | month
+    selected_classroom = request.GET.get("classroom", "all")  # all | classroom id
+    selected_sort = request.GET.get("sort", "points")       # points | challenges | streak
+
+    # ----------------- 2) Base queryset: all profiles --------------------
+    profiles = Profile.objects.select_related("user")
+
+    # ----------------- 3) Filter by classroom (if selected) -------------
+    if selected_classroom != "all":
+        try:
+            classroom_id = int(selected_classroom)
+            profiles = profiles.filter(
+                user__classroommembership__classroom_id=classroom_id
+            )
+        except ValueError:
+            # Invalid value – fall back to "all"
+            selected_classroom = "all"
+
+    classrooms = Classroom.objects.all()
+
+    # ----------------- 4) Build submission queryset for solved ---------- 
+    # We assume Submission has: user, status, created_at
+    solved_submissions = Submission.objects.filter(status="passed")
+
+    now = timezone.now()
+    if selected_time == "week":
+        solved_submissions = solved_submissions.filter(
+            created_at__gte=now - timedelta(days=7)
+        )
+    elif selected_time == "month":
+        solved_submissions = solved_submissions.filter(
+            created_at__gte=now - timedelta(days=30)
+        )
+    # if "all", no date filter
+
+    # ----------------- 5) Annotate stats on profiles --------------------
+    # points  -> Profile.points (all-time)
+    # solved_count -> how many passed submissions in selected time window
+    # badges_count, streak -> dummy values (0) so template works
+    profiles = profiles.annotate(
+        solved_count=Count(
+            "user__submissions",
+            filter=Q(user__submissions__in=solved_submissions),
+            distinct=True,
+        ),
+        badges_count=Value(0, output_field=IntegerField()),
+        streak=Value(0, output_field=IntegerField()),
+    )
+
+    # ----------------- 6) Sorting --------------------------------------
+    if selected_sort == "challenges":
+        profiles = profiles.order_by("-solved_count", "-points", "user__username")
+    elif selected_sort == "streak":
+        profiles = profiles.order_by("-streak", "-points", "user__username")
+    else:  # default: points
+        profiles = profiles.order_by("-points", "-solved_count", "user__username")
+
+    leaderboard = list(profiles)
+
+    # ----------------- 7) Current user rank + points --------------------
+    user_rank = None
+    user_points = 0
+
+    for idx, p in enumerate(leaderboard, start=1):
+        if p.user_id == request.user.id:
+            user_rank = idx
+            user_points = p.points
+            break
+
+    week_start = now - timedelta(days=7)
+    user_points_week = Submission.objects.filter(
+        user=request.user,
+        status="passed",
+        created_at__gte=week_start,
+    ).count()
+
+    # ----------------- 9) Context for template -------------------------
+    context = {
+        "leaderboard": leaderboard,
+        "classrooms": classrooms,
+        "selected_time": selected_time,
+        "selected_classroom": (
+            int(selected_classroom) if selected_classroom not in ("", "all") else "all"
+        ),
+        "selected_sort": selected_sort,
+        "user_rank": user_rank,
+        "user_points": user_points,
+        "user_points_week": user_points_week,
+    }
+
+    return render(request, "leaderboard.html", context)
 
 
 class ChallengeDetailView(View):
