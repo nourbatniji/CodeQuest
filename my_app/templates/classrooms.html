@@ -20,6 +20,7 @@
             style="background: white; color: var(--primary-600);">
             <i class="fas fa-plus"></i> Create New Classroom
         </button>
+
     </div>
 </div>
 
@@ -164,30 +165,30 @@
                 </div>
             </div>
         </div>
-       <div class="classroom-card-footer">
-    <span style="font-size: 0.875rem; color: var(--text-secondary);">
-        <i class="fas fa-clock"></i>
-        Updated {{ classroom.updated_at|date:"M d, Y, g:i a" }}
-    </span>
+        <div class="classroom-card-footer">
+            <span style="font-size: 0.875rem; color: var(--text-secondary);">
+                <i class="fas fa-clock"></i>
+                Updated {{ classroom.updated_at|date:"M d, Y, g:i a" }}
+            </span>
 
-    {% if user.is_staff %}
-    <div style="display: flex; gap: 0.5rem;">
-        <button class="btn-modern btn-secondary"
-                onclick="window.location.href='{% url "classroom_detail" classroom.slug %}'">
-            <i class="fas fa-cog"></i> Manage
-        </button>
-        <button class="btn-modern btn-primary"
-                onclick="window.location.href='{% url "classroom_detail" classroom.slug %}'">
-            <i class="fas fa-chart-bar"></i> Analytics
-        </button>
-    </div>
-    {% else %}
-    <button class="btn-modern btn-primary"
-            onclick="window.location.href='{% url "classroom_detail" classroom.slug %}'">
-        <i class="fas fa-arrow-right"></i> View
-    </button>
-    {% endif %}
-</div>
+            {% if user.is_staff %}
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="btn-modern btn-secondary" onclick="window.location.href='{% url " classroom_detail"
+                    classroom.slug %}'">
+                    <i class="fas fa-cog"></i> Manage
+                </button>
+                <button class="btn-modern btn-primary" onclick="window.location.href='{% url " classroom_detail"
+                    classroom.slug %}'">
+                    <i class="fas fa-chart-bar"></i> Analytics
+                </button>
+            </div>
+            {% else %}
+            <button class="btn-modern btn-primary" onclick="window.location.href='{% url " classroom_detail"
+                classroom.slug %}'">
+                <i class="fas fa-arrow-right"></i> View
+            </button>
+            {% endif %}
+        </div>
 
     </div>
     {% endfor %}
@@ -199,37 +200,48 @@
     <div
         style="background: var(--surface); border-radius: var(--radius-lg); padding: 2rem; max-width: 500px; width: 90%; box-shadow: var(--shadow-lg);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
-            <h2 style="margin: 0; color: var(--text-primary);"><i class="fas fa-plus-circle"></i> Create New Classroom
+            <h2 style="margin: 0; color: var(--text-primary);">
+                <i class="fas fa-plus-circle"></i> Create New Classroom
             </h2>
-            <button onclick="closeCreateClassroomModal()"
+            <button type="button" onclick="closeCreateClassroomModal()"
                 style="background: none; border: none; font-size: 1.5rem; color: var(--text-secondary); cursor: pointer;">
                 <i class="fas fa-times"></i>
             </button>
         </div>
-        <form>
+
+        <!-- IMPORTANT: method, action, csrf_token, and name attributes -->
+        <form method="POST" action="{% url 'mentor_create_classroom' %}">
+            {% csrf_token %}
+
             <div style="margin-bottom: 1rem;">
-                <label
-                    style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 600;">Classroom
-                    Name</label>
-                <input type="text" class="form-control-modern" placeholder="e.g., Advanced Python Programming" required>
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 600;">
+                    Classroom Name
+                </label>
+                <input type="text" name="name" class="form-control-modern"
+                    placeholder="e.g., Advanced Python Programming" required>
             </div>
+
             <div style="margin-bottom: 1rem;">
-                <label
-                    style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 600;">Description</label>
-                <textarea class="form-control-modern" rows="3" placeholder="Brief description of the classroom..."
-                    required></textarea>
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 600;">
+                    Description
+                </label>
+                <textarea name="description" class="form-control-modern" rows="3"
+                    placeholder="Brief description of the classroom..." required></textarea>
             </div>
+
+            <!-- For now, difficulty is just visual; model doesn't have this field yet -->
             <div style="margin-bottom: 1rem;">
-                <label
-                    style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 600;">Difficulty
-                    Level</label>
-                <select class="filter-select" style="width: 100%;">
-                    <option>Beginner</option>
-                    <option>Intermediate</option>
-                    <option>Advanced</option>
-                    <option>All Levels</option>
+                <label style="display: block; margin-bottom: 0.5rem; color: var(--text-primary); font-weight: 600;">
+                    Difficulty Level
+                </label>
+                <select class="filter-select" style="width: 100%;" name="difficulty">
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                    <option value="all">All Levels</option>
                 </select>
             </div>
+
             <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 1.5rem;">
                 <button type="button" class="btn-modern btn-secondary" onclick="closeCreateClassroomModal()">
                     Cancel
@@ -241,20 +253,29 @@
         </form>
     </div>
 </div>
-
 <script>
     function openCreateClassroomModal() {
-        document.getElementById('createClassroomModal').style.display = 'flex';
+        const modal = document.getElementById("createClassroomModal");
+        if (modal) {
+            modal.style.display = "flex";  // because we use align-items / justify-content
+        }
     }
 
     function closeCreateClassroomModal() {
-        document.getElementById('createClassroomModal').style.display = 'none';
+        const modal = document.getElementById("createClassroomModal");
+        if (modal) {
+            modal.style.display = "none";
+        }
     }
 
-    // Close modal when clicking outside
-    document.getElementById('createClassroomModal')?.addEventListener('click', function (e) {
-        if (e.target === this) {
-            closeCreateClassroomModal();
+    // Optional: close when clicking outside the content
+    document.addEventListener("click", function (e) {
+        const modal = document.getElementById("createClassroomModal");
+        if (!modal) return;
+
+        const dialog = modal.firstElementChild;
+        if (e.target === modal) {
+            modal.style.display = "none";
         }
     });
 </script>

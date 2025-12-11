@@ -10,33 +10,50 @@
 
 {% block content %}
 <!-- Classroom Header -->
-<div class="dashboard-header animate-fade-in d-flex justify-content-between">
-    <div>
-        <h1><i class="fas fa-users"></i> {{ classroom.name }}</h1>
-        <p>{{ classroom.description }}</p>
-
-    </div>
-{% if request.user.is_authenticated %}
-    {% if is_member %}
-        <!-- LEAVE CLASSROOM -->
-        <form method="POST" action="{% url 'leave_classroom' classroom.slug %}">
-            {% csrf_token %}
-            <button class="btn-modern"
-                style="background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid var(--error);">
-                <i class="fas fa-sign-out-alt"></i> Leave Classroom
-            </button>
-        </form>
-    {% else %}
-        <!-- JOIN CLASSROOM -->
-        <form method="POST" action="{% url 'join_classroom' classroom.slug %}">
-            {% csrf_token %}
+<div class="dashboard-header animate-fade-in">
+    <div style="display: flex; justify-content: space-between; align-items: start;">
+        <div>
+            <h1><i class="fas fa-users"></i> {{ classroom.name }}</h1>
+            <p>{{ classroom.description }}</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            {% if user.is_staff %}
+            <!-- Mentor Actions -->
             <button class="btn-modern btn-primary">
-                <i class="fas fa-user-plus"></i> Join Classroom
+                <i class="fas fa-plus"></i> Add Challenge
             </button>
-        </form>
-    {% endif %}
-{% endif %}
-
+            <button class="btn-modern btn-secondary">
+                <i class="fas fa-cog"></i> Settings
+            </button>
+            <button class="btn-modern btn-secondary">
+                <i class="fas fa-chart-bar"></i> Analytics
+            </button>
+            {% else %}
+            <!-- Student Actions -->
+            {% if request.user.is_authenticated %}
+            {% if is_member %}
+            <form method="POST" action="{% url 'leave_classroom' classroom.slug %}" style="margin: 0;">
+                {% csrf_token %}
+                <button class="btn-modern"
+                    style="background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid var(--error);">
+                    <i class="fas fa-sign-out-alt"></i> Leave Classroom
+                </button>
+            </form>
+            {% else %}
+            <form method="POST" action="{% url 'join_classroom' classroom.slug %}" style="margin: 0;">
+                {% csrf_token %}
+                <button class="btn-modern btn-primary">
+                    <i class="fas fa-user-plus"></i> Join Classroom
+                </button>
+            </form>
+            {% endif %}
+            {% endif %}
+            {% endif %}
+            <a href="/classrooms/" class="btn-modern btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Classrooms
+            </a>
+        </div>
+    </div>
 </div>
 
 <!-- Classroom Info Cards -->
@@ -66,6 +83,17 @@
         <div class="stat-card-label">Challenges</div>
     </div>
 
+    {% if user.is_staff %}
+    <!-- Mentor-specific stat -->
+    <div class="stat-card">
+        <div class="stat-card-icon info">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div class="stat-card-value">78%</div>
+        <div class="stat-card-label">Avg. Completion</div>
+    </div>
+    {% else %}
+    <!-- Student-specific stat -->
     <div class="stat-card">
         <div class="stat-card-icon info">
             <i class="fas fa-chart-line"></i>
@@ -73,11 +101,17 @@
         <div class="stat-card-value">67%</div>
         <div class="stat-card-label">Your Progress</div>
     </div>
+    {% endif %}
 </div>
 
 <!-- Announcements -->
 <div class="section-header">
     <h2><i class="fas fa-bullhorn"></i> Announcements</h2>
+    {% if user.is_staff %}
+    <button class="btn-modern btn-primary" style="padding: 0.5rem 1rem;">
+        <i class="fas fa-plus"></i> Post Announcement
+    </button>
+    {% endif %}
 </div>
 
 <!-- <div class="card-modern animate-fade-in" style="margin-bottom: 2rem;">
@@ -129,6 +163,21 @@
         </div>
 
         <div class="challenge-actions">
+            {% if user.is_staff %}
+            <!-- Mentor View: Show completion stats and management buttons -->
+            <span class="badge-modern badge-success">
+                <i class="fas fa-users"></i> {{ item.completed_count|default:0 }}/{{ members_count }} Completed
+            </span>
+            <button class="btn-modern btn-secondary" style="padding: 0.5rem 1rem;" onclick="event.stopPropagation();">
+                <i class="fas fa-edit"></i> Edit
+            </button>
+            <button class="btn-modern"
+                style="padding: 0.5rem 1rem; background: rgba(239, 68, 68, 0.1); color: var(--error); border: 1px solid var(--error);"
+                onclick="event.stopPropagation();">
+                <i class="fas fa-trash"></i>
+            </button>
+            {% else %}
+            <!-- Student View: Show status and action buttons -->
             {% if status == "passed" %}
             <span class="badge-modern" style="background-color: rgba(16, 185, 129, 0.1); color: var(--success);">
                 <i class="fas fa-check-circle"></i> Passed
@@ -165,6 +214,7 @@
                 <i class="fas fa-redo"></i> Retry
             </button>
             {% endif %}
+            {% endif %}
         </div>
     </div>
     {% endwith %}
@@ -174,48 +224,64 @@
 </div>
 
 
-    <div class="row">
-        <div class="col-md-8">
-            <div class="card mb-4 shadow-sm">
-                <div class="card-body">
-                    <h4 class="card-title mb-2">About this classroom</h4>
-                    <p class="card-text">
-                        {{ classroom.description|default:"No description added yet." }}
-                    </p>
-                    <p class="card-text mb-0">
-                        <strong>Created at:</strong>
-                        {{ classroom.created_at|date:"M d, Y" }}
-                    </p>
-                </div>
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <h4 class="card-title mb-2">About this classroom</h4>
+                <p class="card-text">
+                    {{ classroom.description|default:"No description added yet." }}
+                </p>
+                <p class="card-text mb-0">
+                    <strong>Created at:</strong>
+                    {{ classroom.created_at|date:"M d, Y" }}
+                </p>
             </div>
+        </div>
 
-<div class="leaderboard-table-container animate-fade-in">
-    <table class="leaderboard-table">
-        <thead>
-            <tr>
-                <th>Rank</th>
-                <th>Student</th>
-                <th>Solved</th>
-                <th>Points</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td class="rank-cell top-3">1</td>
-                <td>
-                    <div class="user-cell">
-                        <div class="user-avatar" style="background: linear-gradient(135deg, #fbbf24, #f59e0b);"></div>
-                        <div class="user-info">
-                            <div class="user-name"></div>
-                        </div>
-                    </div>
-                </td>
-                <td></td>
-                <td class="points-cell"></td>
-            </tr>
+        <!-- Student Progress / Leaderboard Section -->
+        <div class="section-header" style="margin-top: 2rem;">
+            {% if user.is_staff %}
+            <h2><i class="fas fa-chart-line"></i> Student Progress</h2>
+            <button class="btn-modern btn-secondary" style="padding: 0.5rem 1rem;">
+                <i class="fas fa-download"></i> Export Report
+            </button>
+            {% else %}
+            <h2><i class="fas fa-trophy"></i> Classroom Leaderboard</h2>
+            <a href="/leaderboard/">
+                View Global <i class="fas fa-arrow-right"></i>
+            </a>
+            {% endif %}
+        </div>
 
-        </tbody>
-    </table>
-</div>
+        <div class="leaderboard-table-container animate-fade-in">
+            <table class="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Student</th>
+                        <th>Solved</th>
+                        <th>Points</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="rank-cell top-3">1</td>
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar" style="background: linear-gradient(135deg, #fbbf24, #f59e0b);">
+                                </div>
+                                <div class="user-info">
+                                    <div class="user-name"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td></td>
+                        <td class="points-cell"></td>
+                    </tr>
 
-{% endblock %}
+                </tbody>
+            </table>
+        </div>
+
+        {% endblock %}

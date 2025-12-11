@@ -31,6 +31,7 @@ urlpatterns = [
     path("mentor_dashboard/", views.mentor_dashboard, name="mentor_dashboard"),
 
     path("classrooms/", views.classrooms_page, name="classrooms_page"),
+    path("mentor/classrooms/create/",views.mentor_create_classroom,name="mentor_create_classroom",),
     path("classroom/<slug:slug>/", views.classroom_detail, name="classroom_detail"),
     path("classroom/<slug:slug>/join/", views.join_classroom, name="join_classroom"),
     path("classroom/<slug:slug>/leave/", views.leave_classroom, name="leave_classroom"),
