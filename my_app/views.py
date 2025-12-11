@@ -9,6 +9,7 @@ from .models import (
     Profile,
     Submission,
     Comment,
+    check_user_badges,
 )
 from django.contrib import messages
 from django.db.models import Count, Q, Sum
@@ -139,7 +140,7 @@ def dashboard(request):
 
 
 # --------------- LEADERBOARD ENGINE ---------------
-@login_required
+
 def _compute_leaderboard(timeframe="all", classroom_id=None, limit=100):
     now = timezone.now()
     submissions = Submission.objects.filter(status="passed")
@@ -234,9 +235,34 @@ def leaderboard_page(request):
 
 @login_required
 def profile_page(request):
-    if not request.user.is_authenticated:
-        return render(request, "not_found.html")
-    return render(request, "profile.html")
+    user = request.user
+
+    # كل البادجات يلي حقّقها
+    achievements = user.badges.all()
+
+    # آخر 10 تقديمات
+    recent_submissions = (
+        Submission.objects.filter(user=user)
+        .select_related("challenge")
+        .order_by("-created_at")[:10]
+    )
+
+    # عدد التحديات المحلولة فريد (بدون تكرار محاولات)
+    total_solved = (
+        Submission.objects.filter(user=user, status="passed")
+        .values("challenge")
+        .distinct()
+        .count()
+    )
+
+    context = {
+        "user": user,
+        "achievements": achievements,
+        "recent_submissions": recent_submissions,
+        "total_solved": total_solved,
+    }
+
+    return render(request, "profile.html", context)
 
 
 @staff_or_superuser_required
@@ -692,6 +718,8 @@ def challenge_submit(request, challenge_slug):
 
     # 10) Award points (your helper can set submission.points_awarded internally)
     points_awarded = award_points_for_submission(submission)
+    if submission.status == "passed":
+        check_user_badges(request.user)
 
     # 11) Return response to the frontend
     return JsonResponse({
