@@ -25,7 +25,7 @@ import traceback
 from django.conf import settings
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
+from django.contrib.auth.decorators import login_required
 
 
 def index(request):
@@ -83,6 +83,7 @@ def signout(request):
 
 from django.db.models import Sum
 
+@login_required
 def dashboard(request):
     if not request.user.is_authenticated:
         return render(request, "not_found.html")
@@ -137,6 +138,7 @@ def dashboard(request):
 
 
 # --------------- LEADERBOARD ENGINE ---------------
+@login_required
 def _compute_leaderboard(timeframe="all", classroom_id=None, limit=100):
     now = timezone.now()
     submissions = Submission.objects.filter(status="passed")
@@ -178,7 +180,7 @@ def _compute_leaderboard(timeframe="all", classroom_id=None, limit=100):
 
     return leaderboard
 
-
+@login_required
 def leaderboard_page(request):
     if not request.user.is_authenticated:
         return render(request, "not_found.html")
@@ -229,7 +231,7 @@ def leaderboard_page(request):
 
     return render(request, "leaderboard.html", context)
 
-
+@login_required
 def profile_page(request):
     if not request.user.is_authenticated:
         return render(request, "not_found.html")
@@ -237,20 +239,115 @@ def profile_page(request):
 
 
 @staff_or_superuser_required
+@login_required
 def mentor_dashboard(request):
-    if not request.user.is_authenticated:
-        return render(request, "not_found.html")
-    return render(request, "mentor.html")
+    mentor = request.user
+    classrooms = Classroom.objects.filter(mentor=mentor)
+    classrooms = classrooms.annotate(
+        students_count=Count("memberships", distinct=True),
+        challenges_count=Count("challenges", distinct=True),
+        submissions_count=Count("challenges__submissions", distinct=True),
+    )
+
+    total_classrooms = classrooms.count()
+    total_students = (
+        classrooms.aggregate(total=Sum("students_count"))["total"] or 0
+    )
+    total_challenges = Challenge.objects.filter(
+        classroom__in=classrooms
+    ).count()
+    total_submissions = Submission.objects.filter(
+        challenge__classroom__in=classrooms
+    ).count()
 
 
+    recent_submissions = (
+        Submission.objects.filter(challenge__classroom__in=classrooms)
+        .select_related("user", "challenge")
+        .order_by("-created_at")[:10]
+    )
+
+    context = {
+        "classrooms": classrooms,
+        "total_classrooms": total_classrooms,
+        "total_students": total_students,
+        "total_challenges": total_challenges,
+        "total_submissions": total_submissions,
+        "recent_submissions": recent_submissions,
+    }
+
+    return render(request, "mentor.html", context)
 # --------------- CLASSROOMS ---------------
+
 def classrooms_page(request):
     if not request.user.is_authenticated:
         return render(request, "not_found.html")
 
-    classrooms = Classroom.objects.annotate(members_count=Count("memberships"))
-    return render(request, "classrooms.html", {"classrooms": classrooms})
+    # ---------- Stats used in student view ----------
+    joined_classrooms_count = ClassroomMembership.objects.filter(
+        user=request.user
+    ).count()
 
+    total_completed_challenges = Submission.objects.filter(
+        user=request.user,
+        status='passed'
+    ).values("challenge").distinct().count()
+
+    # ---------- Mentor view ----------
+    if request.user.is_staff:
+        # Only this mentor's classrooms
+        classrooms = Classroom.objects.filter(
+            mentor=request.user
+        ).annotate(
+            members_count=Count("memberships")
+        )
+
+        # Mentor stats
+        mentor_active_classrooms = classrooms.count()
+
+        mentor_total_students = ClassroomMembership.objects.filter(
+            classroom__mentor=request.user
+        ).values("user").distinct().count()
+
+        mentor_total_challenges = Challenge.objects.filter(
+            classroom__mentor=request.user
+        ).count()
+
+        # Avg completion: distinct (user, challenge) that passed
+        total_passed = Submission.objects.filter(
+            status='passed',
+            challenge__classroom__mentor=request.user
+        ).values("user", "challenge").distinct().count()
+
+        total_possible = mentor_total_challenges * mentor_total_students
+        mentor_avg_completion = 0
+        if total_possible > 0:
+            mentor_avg_completion = round((total_passed / total_possible) * 100)
+
+        context = {
+            "classrooms": classrooms,
+            "mentor_active_classrooms": mentor_active_classrooms,
+            "mentor_total_students": mentor_total_students,
+            "mentor_total_challenges": mentor_total_challenges,
+            "mentor_avg_completion": mentor_avg_completion,
+            # student stats (not used in mentor branch, but safe to pass)
+            "joined_classrooms_count": joined_classrooms_count,
+            "total_completed_challenges": total_completed_challenges,
+        }
+
+    # ---------- Student view ----------
+    else:
+        classrooms = Classroom.objects.annotate(
+            members_count=Count("memberships")
+        )
+
+        context = {
+            "classrooms": classrooms,
+            "joined_classrooms_count": joined_classrooms_count,
+            "total_completed_challenges": total_completed_challenges,
+        }
+
+    return render(request, "classrooms.html", context)
 
 def classroom_detail(request, slug=None):
     if not request.user.is_authenticated:

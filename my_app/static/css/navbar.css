@@ -1,9 +1,4 @@
-/* ===================================
-   NAVIGATION BAR STYLES
-   =================================== */
-
 .navbar-codequest {
-    background: var(--surface);
     border-bottom: 1px solid var(--border-color);
     box-shadow: var(--shadow-sm);
     padding: 0.75rem 0;
@@ -17,6 +12,12 @@
     transition: color var(--transition-fast);
 }
 
+.navbar-codequest .nav-link:focus,
+.navbar-codequest .nav-link:active {
+    outline: none;
+    box-shadow: none;
+    border: none;
+}
 .navbar-codequest .navbar-brand:hover {
     color: var(--primary-700);
 }
@@ -25,19 +26,15 @@
     color: var(--text-secondary);
     font-weight: 500;
     padding: 0.5rem 1rem;
-    border-radius: var(--radius-md);
+
     transition: all var(--transition-fast);
     position: relative;
 }
 
-.navbar-codequest .nav-link:hover {
-    color: var(--primary-500);
-    background-color: var(--bg-secondary);
-}
 
 .navbar-codequest .nav-link.active {
     color: var(--primary-500);
-    background-color: rgba(99, 102, 241, 0.1);
+
 }
 
 /* Dark Mode Toggle Button */
