@@ -88,44 +88,35 @@
 </div>
 
 <div class="classroom-grid animate-fade-in">
-    <!-- Sample Classroom Card 1 -->
-    <div class="classroom-card" onclick="window.location.href='/classroom/1'">
-        <div class="classroom-card-header">
-            <h3>Python Fundamentals</h3>
-            <p>Master the basics of Python programming</p>
-        </div>
-        <div class="classroom-card-body">
-            <div class="classroom-meta">
-                <div class="classroom-meta-item">
-                    <i class="fas fa-user-tie"></i>
-                    <span>Prof. Johnson</span>
+    {% for classroom in my_classrooms %}
+        <div class="classroom-card"
+             onclick="window.location.href='{% url 'classroom_detail' classroom.slug %}'">
+            <div class="classroom-card-header">
+                <h3>{{ classroom.name }}</h3>
+                <p>{{ classroom.description }}</p>
+            </div>
+            <div class="classroom-card-body">
+                <div class="classroom-meta">
+                    <div class="classroom-meta-item">
+                        <i class="fas fa-user-tie"></i>
+                        <span>{{ classroom.mentor.username }}</span>
+                    </div>
+                    <div class="classroom-meta-item">
+                        <i class="fas fa-users"></i>
+                        <span>{{ classroom.members_count }} members</span>
+                    </div>
                 </div>
-                <div class="classroom-meta-item">
-                    <i class="fas fa-users"></i>
-                    <span>45 members</span>
+                <div class="classroom-meta">
+                    <div class="classroom-meta-item">
+                        <i class="fas fa-code"></i>
+                        <span>{{ classroom.challenges_count }} challenges</span>
+                    </div>
                 </div>
             </div>
-            <div class="classroom-meta">
-                <div class="classroom-meta-item">
-                    <i class="fas fa-code"></i>
-                    <span>12 challenges</span>
-                </div>
-                <div class="classroom-meta-item">
-                    <i class="fas fa-check-circle"></i>
-                    <span>8 completed</span>
-                </div>
-            </div>
-            <div class="progress-modern">
-                <div class="progress-bar-modern" style="width: 67%;"></div>
-            </div>
         </div>
-        <div class="classroom-card-footer">
-            <span style="font-size: 0.875rem; color: var(--text-secondary);">67% Complete</span>
-            <span class="badge-modern badge-primary">Active</span>
-        </div>
-    </div>
-
-
+    {% empty %}
+        <p>You are not in any classrooms yet. <a href="{% url 'classrooms_page' %}">Join one</a>.</p>
+    {% endfor %}
 </div>
 
 <!-- Recently Solved Challenges -->
@@ -137,34 +128,33 @@
 </div>
 
 <div class="challenge-list animate-fade-in">
-    <!-- Sample Challenge 1 -->
-    <div class="challenge-item" onclick="window.location.href='/challenge/1'">
-        <div class="challenge-info">
-            <div class="challenge-title">Two Sum Problem</div>
-            <div class="challenge-meta">
-                <span class="badge-modern badge-easy">
-                    <i class="fas fa-circle"></i> Easy
-                </span>
-                <span style="color: var(--text-secondary); font-size: 0.875rem;">
-                    <i class="fas fa-folder"></i> Python Fundamentals
-                </span>
-                <span style="color: var(--text-secondary); font-size: 0.875rem;">
-                    <i class="fas fa-clock"></i> Solved 2 days ago
+    {% for sub in recent_submissions %}
+        <div class="challenge-item"
+             onclick="window.location.href='{% url 'challenge_detail' sub.challenge.slug %}'">
+            <div class="challenge-info">
+                <div class="challenge-title">{{ sub.challenge.title }}</div>
+                <div class="challenge-meta">
+                    <span class="badge-modern badge-{{ sub.challenge.difficulty|lower }}">
+                        <i class="fas fa-circle"></i> {{ sub.challenge.difficulty }}
+                    </span>
+                    <span style="color: var(--text-secondary); font-size: 0.875rem;">
+                        <i class="fas fa-folder"></i> {{ sub.challenge.classroom.name }}
+                    </span>
+                    <span style="color: var(--text-secondary); font-size: 0.875rem;">
+                        <i class="fas fa-clock"></i> Solved {{ sub.created_at|timesince }} ago
+                    </span>
+                </div>
+            </div>
+            <div class="challenge-actions">
+                <span class="badge-modern"
+                      style="background-color: rgba(16, 185, 129, 0.1); color: var(--success);">
+                    <i class="fas fa-check-circle"></i> Passed
                 </span>
             </div>
         </div>
-        <div class="challenge-actions">
-            <span class="badge-modern" style="background-color: rgba(16, 185, 129, 0.1); color: var(--success);">
-                <i class="fas fa-check-circle"></i> Passed
-            </span>
-        </div>
-    </div>
- 
-</div>
-
-<!-- Recommended Challenges -->
-<div class="section-header" style="margin-top: 2rem;">
-    <h2><i class="fas fa-lightbulb"></i> Recommended for You</h2>
+    {% empty %}
+        <p>No solved challenges yet. <a href="{% url 'challenge_list' %}">Start one!</a></p>
+    {% endfor %}
 </div>
 
 

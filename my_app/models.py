@@ -206,8 +206,12 @@ class Submission(models.Model):
     language = models.CharField(max_length=20, choices=LANGUAGE_CHOICES, default='python')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
     points_awarded = models.IntegerField(default=0,validators=[MinValueValidator(0)])
+    attempt_number = models.PositiveIntegerField(default=1)  
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.user} - {self.challenge} (#{self.attempt_number})"
 
 
 class Comment(models.Model):

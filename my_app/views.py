@@ -22,15 +22,17 @@ from django.views import View
 from django.core.paginator import Paginator
 import json
 import traceback
+from django.conf import settings
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
 
 
 def index(request):
     return render(request, "index.html")
 
 
-# =======================
-#        SIGNUP
-# =======================
+# --------------- SIGNUP ---------------
 def signup(request):
     if request.method == "POST":
         errors = models.validate_signup(request.POST)
@@ -38,7 +40,6 @@ def signup(request):
             return render(request, "signup.html", {"errors": errors})
 
         user = models.create_user(request.POST)
-        Profile.objects.create(user=user)
         auth_login(request, user)
 
         return redirect("/dashboard")
@@ -46,9 +47,8 @@ def signup(request):
     return render(request, "signup.html")
 
 
-# =======================
-#        LOGIN
-# =======================
+
+# --------------- LOGIN ---------------
 def login(request):
     if request.method == "POST":
         errors = models.validate_login(request.POST)
@@ -81,20 +81,62 @@ def signout(request):
     request.session.flush()
     return redirect("/")
 
+from django.db.models import Sum
 
 def dashboard(request):
     if not request.user.is_authenticated:
         return render(request, "not_found.html")
+
+    total_solved = (
+    Submission.objects.filter(
+        user=request.user,
+        status="passed",
+    )
+    .values("challenge")   # group by challenge
+    .distinct()            # remove duplicates
+    .count()               # count unique challenges
+)
+
+    # total points from passed submissions
+    total_points = (
+        Submission.objects.filter(user=request.user, status="passed")
+        .aggregate(Sum("points_awarded"))["points_awarded__sum"]
+        or 0
+    )
+
+    # classrooms the user joined
+    my_classrooms = (
+        Classroom.objects.filter(memberships__user=request.user)
+        .annotate(
+            members_count=Count("memberships"),
+            challenges_count=Count("challenges"),
+        )
+    )
+    classrooms_joined = my_classrooms.count()
+
+    # recently solved submissions
+    recent_submissions = (
+        Submission.objects.filter(user=request.user, status="passed")
+        .select_related("challenge", "challenge__classroom")
+        .order_by("-created_at")[:5]
+    )
+
+    # simple global rank (optional / rough)
+    global_rank = None  # you can reuse your leaderboard logic later
+
     context = {
         "user": request.user,
-        "user_classes_count": request.user.user_joined_classes.count(),
+        "total_solved": total_solved,
+        "total_points": total_points,
+        "classrooms_joined": classrooms_joined,
+        "global_rank": global_rank,
+        "my_classrooms": my_classrooms,
+        "recent_submissions": recent_submissions,
     }
     return render(request, "dashboard.html", context)
 
 
-# =====================================================
-#                NEW LEADERBOARD ENGINE
-# =====================================================
+# --------------- LEADERBOARD ENGINE ---------------
 def _compute_leaderboard(timeframe="all", classroom_id=None, limit=100):
     now = timezone.now()
     submissions = Submission.objects.filter(status="passed")
@@ -201,9 +243,7 @@ def mentor_dashboard(request):
     return render(request, "mentor.html")
 
 
-# =======================
-#       CLASSROOMS
-# =======================
+# --------------- CLASSROOMS ---------------
 def classrooms_page(request):
     if not request.user.is_authenticated:
         return render(request, "not_found.html")
@@ -390,7 +430,7 @@ class ChallengeDetailView(View):
         return render(request, "challenge_details.html", context)
 
 
-
+@require_POST
 @require_POST
 def challenge_submit(request, challenge_slug):
     try:
@@ -413,20 +453,26 @@ def challenge_submit(request, challenge_slug):
 
         tests = challenge.hidden_tests or []
 
+        # 3) Calculate attempt_number **for this user + this challenge only**
+        previous_attempts = Submission.objects.filter(
+            user=request.user,
+            challenge=challenge,
+        ).count()
 
-        # 3) Create Submission (pending)
+        # 4) Create Submission (pending)
         submission = Submission.objects.create(
             user=request.user,
             challenge=challenge,
             code=user_code,
             language=language,
             status="pending",
+            attempt_number=previous_attempts + 1,   # <--- this is the only place we set it
         )
 
         results = []
         all_passed = True
 
-        # 4) Run tests (same logic as run_tests_view)
+        # 5) Run tests
         for test in tests:
             test_input = test.get("input", "")
             expected_output = (test.get("output", "") or "").strip()
@@ -447,31 +493,26 @@ def challenge_submit(request, challenge_slug):
             if not passed:
                 all_passed = False
 
-        # 5) Set status + points_awarded
-        if all_passed:
-            submission.status = "passed"
-        else:
-            submission.status = "failed"
+        # 6) Set status
+        submission.status = "passed" if all_passed else "failed"
+        submission.save(update_fields=["status"])
 
-        submission.save()
-
-        # 6) Award points (once per challenge) + update Profile.points
+        # 7) Award points (your existing function)
         award_points_for_submission(submission)
 
-        # 7) Return JSON for JS
+        # 8) Return JSON including attempt_number
         return JsonResponse(
             {
                 "status": submission.status,
                 "results": results,
-                "submission_id": submission.id,
+                "submission_id": submission.id,              # DB id
+                "attempt_number": submission.attempt_number, # what we show
                 "points_awarded": submission.points_awarded,
             }
         )
 
     except Exception as e:
-        # Print full traceback in server console for you
         print("ERROR in challenge_submit:\n", traceback.format_exc())
-        # And return the error as JSON so the frontend can show it
         return JsonResponse(
             {"error": f"Server error: {type(e).__name__}: {e}"},
             status=500
@@ -594,3 +635,14 @@ def award_points_for_submission(submission):
     profile, _ = Profile.objects.get_or_create(user=submission.user)
     profile.points = (profile.points or 0) + challenge_points
     profile.save(update_fields=["points"])
+
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        Profile.objects.create(user=instance)
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def save_user_profile(sender, instance, **kwargs):
+    if hasattr(instance, "profile"):
+        instance.profile.save()

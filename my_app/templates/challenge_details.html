@@ -202,8 +202,8 @@
 </div>
 
 <!-- Submission History -->
-<div class="section-header">
-    <h2><i class="fas fa-history"></i> Your Submissions</h2>
+<div class="submission-header" style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">
+    Submission #{{ submission.attempt_number }}
 </div>
 <!-- Submissions List -->
 
@@ -213,15 +213,18 @@
         <div>
             <div class="submission-header"
                 style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.25rem;">
-                Submission #{{ submission.id }}
+                Submission #{{ forloop.counter }}
             </div>
             <div style="font-size: 0.875rem; color: var(--text-secondary);">
-                <i class="fas fa-clock"></i>{{ submission.created_at|timesince }} ago
+                <i class="fas fa-clock"></i> {{ submission.created_at|timesince }} ago
             </div>
-        </div>
-        <!-- submission code -->
-        <pre class="submission-code"><code class="language-python">{{ submission.code }}</code></pre>
-        <div style="display: flex; gap: 1rem; align-items: right;">
+            
+            <pre class="submission-code" style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;
+            padding:0.75rem;font-size:0.875rem;white-space:pre-wrap;overflow-x:auto;
+            font-family:Menlo,Monaco,Consolas,'Courier New',monospace;">{{ submission.code }}</pre>
+
+</div>
+<div style="display: flex; gap: 1rem; align-items: right;">
             <span class="badge-modern" style="background-color: rgba(16, 185, 129, 0.1); color: var(--success);">
                 <i class="fas fa-check-circle"></i> {{ submission.status }}
             </span>
@@ -237,6 +240,8 @@
     </div>
     {% endfor %}
 </div>
+
+
 
 <!-- Discussions -->
 <div class="section-header">
@@ -285,11 +290,11 @@
     </div>
     {% endfor %}
 
-  
+
 </div>
 
 <div id="comment-list" class="animate-fade-in">
-    <!-- التعليقات ستُضاف هنا -->
+    <!-- comments will be added in here -->
 </div>
 
 

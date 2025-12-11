@@ -10,6 +10,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const spinner = submitBtn.querySelector(".spinner");
     const btnText = submitBtn.querySelector(".btn-text");
 
+    const submissionList = document.getElementById("submission-list");
+
+    // Hide all submission code blocks initially
+    if (submissionList) {
+        submissionList.querySelectorAll(".submission-code").forEach(block => {
+            block.style.display = "none";
+        });
+    }
+
+    // Count visible submission cards
+    function getCurrentSubmissionCount() {
+        if (!submissionList) return 0;
+        return submissionList.querySelectorAll(".submission-item").length;
+    }
+
     // ===========================
     // SUBMIT SOLUTION (AJAX)
     // ===========================
@@ -34,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: "POST",
                 headers: {
                     "X-CSRFToken": csrfToken,
-                    "X-Requested-With": "XMLHttpRequest"
+                    "X-Requested-With": "XMLHttpRequest",
                 },
                 body: formData,
             });
@@ -44,31 +59,35 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error("Non-JSON response from server");
             }
 
-            const data = await response.json(); // { status, results, submission_id }
+            const data = await response.json(); // { status, results, submission_id, ... }
 
             if (response.ok) {
+                // Next visible number = how many cards are currently on the page + 1
+                const nextNumber = getCurrentSubmissionCount() + 1;
+                console.log("Next submission number:", nextNumber);
+
                 resultDiv.innerHTML = `
                     <span style="color:${data.status === "passed" ? "green" : "red"};">
-                        Submission #${data.submission_id}: ${data.status.toUpperCase()}
+                        Submission #${nextNumber}: ${data.status.toUpperCase()}
                     </span>
                 `;
 
-                // add new submission card at top
-                const submissionList = document.getElementById("submission-list");
                 const noSubMsg = document.getElementById("no-submissions");
                 if (noSubMsg) noSubMsg.remove();
 
                 const newCard = document.createElement("div");
                 newCard.className = "submission-item animate-fade-in";
-                newCard.dataset.id = data.submission_id;
+                newCard.dataset.id = data.submission_id || "";
 
-                const escapedCode = code.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                const escapedCode = code
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;");
 
                 newCard.innerHTML = `
                     <div>
                         <div class="submission-header"
                              style="font-weight:600;color:var(--text-primary);margin-bottom:0.25rem;">
-                            Submission #${data.submission_id}
+                            Submission #${nextNumber}
                         </div>
                         <div style="font-size:0.875rem;color:var(--text-secondary);">
                             <i class="fas fa-clock"></i> just now
@@ -87,6 +106,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     </div>
                 `;
 
+                // Hide the code block by default for the new card
+                const newCodeBlock = newCard.querySelector(".submission-code");
+                if (newCodeBlock) {
+                    newCodeBlock.style.display = "none";
+                }
+
+                // Put newest on top (same as template order)
                 submissionList.prepend(newCard);
                 codeEditor.value = "";
             } else {
@@ -126,7 +152,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: "POST",
                 headers: {
                     "X-CSRFToken": csrfToken,
-                    "X-Requested-With": "XMLHttpRequest"
+                    "X-Requested-With": "XMLHttpRequest",
                 },
                 body: formData,
             });
@@ -136,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 throw new Error("Non-JSON response from server");
             }
 
-            const data = await response.json(); // { status, results: [{input, expected, output/user_output, passed}] }
+            const data = await response.json(); // { status, results }
 
             if (!response.ok) {
                 resultsDiv.innerHTML = `<p style="color:red;">${data.error || "Failed to run tests."}</p>`;
@@ -178,7 +204,6 @@ document.addEventListener("DOMContentLoaded", () => {
     // ===========================
     // VIEW / HIDE CODE IN HISTORY
     // ===========================
-    const submissionList = document.getElementById("submission-list");
     if (submissionList) {
         submissionList.addEventListener("click", (e) => {
             const button = e.target.closest(".view-code-btn");
@@ -186,25 +211,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const submissionItem = button.closest(".submission-item");
             const codeBlock = submissionItem.querySelector(".submission-code");
+            if (!codeBlock) return;
 
-            const isOpen = codeBlock.classList.toggle("show");
-            button.innerHTML = isOpen
-                ? '<i class="fas fa-eye-slash"></i> Hide Code'
-                : '<i class="fas fa-eye"></i> View Code';
+            const isHidden =
+                codeBlock.style.display === "none" ||
+                getComputedStyle(codeBlock).display === "none";
 
-            // close others
-            document.querySelectorAll(".submission-item .submission-code").forEach(other => {
-                if (other !== codeBlock) {
-                    other.classList.remove("show");
-                    const otherBtn = other.closest(".submission-item").querySelector(".view-code-btn");
-                    if (otherBtn) {
-                        otherBtn.innerHTML = '<i class="fas fa-eye"></i> View Code';
-                    }
-                }
+            // Hide all other code blocks
+            submissionList.querySelectorAll(".submission-code").forEach(block => {
+                block.style.display = "none";
+            });
+            submissionList.querySelectorAll(".view-code-btn").forEach(btn => {
+                btn.innerHTML = '<i class="fas fa-eye"></i> View Code';
             });
 
-            if (isOpen && window.Prism) {
-                Prism.highlightElement(codeBlock.querySelector("code"));
+            if (isHidden) {
+                codeBlock.style.display = "block";
+                button.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Code';
+
+                if (window.Prism) {
+                    const innerCode = codeBlock.querySelector("code");
+                    if (innerCode) {
+                        Prism.highlightElement(innerCode);
+                    }
+                }
+            } else {
+                codeBlock.style.display = "none";
+                button.innerHTML = '<i class="fas fa-eye"></i> View Code';
             }
         });
     }
