@@ -59,7 +59,7 @@
 .filter-select:focus {
     outline: none;
     border-color: var(--primary-500);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.08);
 }
 
 /* Top Performers Cards */
@@ -179,7 +179,7 @@
 }
 
 .leaderboard-table tbody tr.current-user {
-    background-color: rgba(99, 102, 241, 0.05);
+    background-color: rgba(168, 85, 247, 0.04);
     border-left: 3px solid var(--primary-500);
 }
 
