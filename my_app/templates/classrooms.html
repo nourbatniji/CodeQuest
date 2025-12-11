@@ -173,18 +173,15 @@
 
             {% if user.is_staff %}
             <div style="display: flex; gap: 0.5rem;">
-                <button class="btn-modern btn-secondary" onclick="window.location.href='{% url " classroom_detail"
-                    classroom.slug %}'">
+                <button class="btn-modern btn-secondary" onclick="window.location.href='{% url "classroom_detail" classroom.slug %}'">
                     <i class="fas fa-cog"></i> Manage
                 </button>
-                <button class="btn-modern btn-primary" onclick="window.location.href='{% url " classroom_detail"
-                    classroom.slug %}'">
+                <button class="btn-modern btn-primary" onclick="window.location.href='{% url "classroom_detail" classroom.slug %}'">
                     <i class="fas fa-chart-bar"></i> Analytics
                 </button>
             </div>
             {% else %}
-            <button class="btn-modern btn-primary" onclick="window.location.href='{% url " classroom_detail"
-                classroom.slug %}'">
+            <button class="btn-modern btn-primary" onclick="window.location.href='{% url "classroom_detail" classroom.slug %}'">
                 <i class="fas fa-arrow-right"></i> View
             </button>
             {% endif %}

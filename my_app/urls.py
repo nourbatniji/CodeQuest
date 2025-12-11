@@ -32,7 +32,10 @@ urlpatterns = [
 
     path("classrooms/", views.classrooms_page, name="classrooms_page"),
     path("mentor/classrooms/create/",views.mentor_create_classroom,name="mentor_create_classroom",),
+    path("mentor/classrooms/<slug:classroom_slug>/challenges/create/", views.mentor_create_challenge,name="mentor_create_challenge",),
     path("classroom/<slug:slug>/", views.classroom_detail, name="classroom_detail"),
     path("classroom/<slug:slug>/join/", views.join_classroom, name="join_classroom"),
     path("classroom/<slug:slug>/leave/", views.leave_classroom, name="leave_classroom"),
+    path("mentor/challenges/<slug:challenge_slug>/edit/",views.mentor_edit_challenge,name="mentor_edit_challenge",),
+
 ]
