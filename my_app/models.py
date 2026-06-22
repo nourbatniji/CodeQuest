@@ -65,7 +65,14 @@ def create_user(postData):
     user.is_staff = False
     user.is_superuser = False
     user.save()
-    return user  
+
+    # If user requested mentor role, add them to "Mentor Requests" group
+    if postData.get('register_as_mentor'):
+        from django.contrib.auth.models import Group
+        group, _ = Group.objects.get_or_create(name='Mentor Requests')
+        user.groups.add(group)
+
+    return user
 
 def authenticate_user(email, password): # gets the email to check the user pass
     try:

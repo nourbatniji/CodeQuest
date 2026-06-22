@@ -1,8 +1,48 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth import get_user_model
 from .models import (
     Classroom, ClassroomMembership, Challenge, Submission, Comment,
     Badge, UserBadge, Tag, Profile
 )
+
+User = get_user_model()
+
+class MentorRequestFilter(admin.SimpleListFilter):
+    title = 'Mentor Requests'
+    parameter_name = 'mentor_request'
+
+    def lookups(self, request, model_admin):
+        return [('pending', 'Pending Mentor Requests')]
+
+    def queryset(self, request, queryset):
+        if self.value() == 'pending':
+            return queryset.filter(groups__name='Mentor Requests', is_staff=False)
+        return queryset
+
+class CustomUserAdmin(UserAdmin):
+    list_display = ['username', 'email', 'is_staff', 'is_pending_mentor']
+    list_filter = UserAdmin.list_filter + (MentorRequestFilter,)
+    actions = ['approve_as_mentor']
+
+    def is_pending_mentor(self, obj):
+        return obj.groups.filter(name='Mentor Requests').exists()
+    is_pending_mentor.boolean = True
+    is_pending_mentor.short_description = 'Pending Mentor'
+
+    def approve_as_mentor(self, request, queryset):
+        from django.contrib.auth.models import Group
+        mentor_group = Group.objects.filter(name='Mentor Requests').first()
+        for user in queryset:
+            user.is_staff = True
+            user.save()
+            if mentor_group:
+                user.groups.remove(mentor_group)
+        self.message_user(request, f"{queryset.count()} user(s) approved as mentor.")
+    approve_as_mentor.short_description = "Approve selected users as Mentor"
+
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)
 
 # ---------- Classroom ----------
 class ClassroomAdmin(admin.ModelAdmin):

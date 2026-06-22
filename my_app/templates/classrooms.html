@@ -120,15 +120,15 @@
 
 <!-- Student Filters -->
 <div class="leaderboard-filters animate-fade-in" style="margin-bottom: 2rem;">
-    <div class="filter-row">
-        <div class="filter-group" style="flex: 2;">
+    <div class="filter-row" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
+        <div class="filter-group" style="flex: 2; min-width: 200px;">
             <label class="filter-label">Search Classrooms</label>
             <input type="text" class="form-control-modern" placeholder="Search by name or mentor..."
                 id="searchClassrooms">
         </div>
-        <div class="filter-group">
+        <div class="filter-group" style="min-width: 160px;">
             <label class="filter-label">Sort By</label>
-            <select class="filter-select">
+            <select class="filter-select" id="sortClassrooms">
                 <option>Most Popular</option>
                 <option>Newest</option>
                 <option>Most Challenges</option>
