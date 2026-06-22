@@ -13,7 +13,7 @@ from .models import (
     User
 )
 from django.contrib import messages
-from django.db.models import Count, Q, Sum, F
+from django.db.models import Count, Q, Sum, F, Value, IntegerField
 from .decorators import staff_or_superuser_required
 from django.contrib.auth import login as auth_login, logout as auth_logout
 from django.http import JsonResponse
@@ -29,15 +29,6 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.contrib.auth.decorators import login_required
 from django.db.models.functions import Coalesce
-
-
-from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Q, Value, IntegerField
-from django.shortcuts import render
-from django.utils import timezone
-
-from .models import Profile, Submission, Classroom, ClassroomMembership
-
 
 
 def index(request):
@@ -93,7 +84,6 @@ def signout(request):
     request.session.flush()
     return redirect("/")
 
-from django.db.models import Sum
 
 @login_required
 def dashboard(request):
@@ -101,14 +91,14 @@ def dashboard(request):
         return render(request, "not_found.html")
 
     total_solved = (
-    Submission.objects.filter(
-        user=request.user,
-        status="passed",
+        Submission.objects.filter(
+            user=request.user,
+            status="passed",
+        )
+        .values("challenge")
+        .distinct()
+        .count()
     )
-    .values("challenge")   # group by challenge
-    .distinct()            # remove duplicates
-    .count()               # count unique challenges
-)
 
     # total points from passed submissions
     total_points = (
@@ -134,8 +124,7 @@ def dashboard(request):
         .order_by("-created_at")[:5]
     )
 
-    # simple global rank (optional / rough)
-    global_rank = None  # you can reuse your leaderboard logic later
+    global_rank = None
 
     context = {
         "user": request.user,
@@ -153,16 +142,14 @@ def dashboard(request):
 def profile_page(request, username=None):
     # 1) Which user's profile are we showing?
     if username is None:
-        # /profile/  -> current logged-in user
         profile_user = request.user
     else:
-        # /profile/<username>/ -> lookup by username
         profile_user = get_object_or_404(
             User.objects.select_related("profile"),
             username=username,
         )
 
-    # 2) Total points = sum of points of all passed challenges
+    # 2) Total points
     total_points_data = (
         Submission.objects
         .filter(user=profile_user, status="passed")
@@ -170,7 +157,7 @@ def profile_page(request, username=None):
     )
     total_points = total_points_data["total"] or 0
 
-    # 3) Challenges solved = number of DISTINCT challenges with at least one passed submission
+    # 3) Challenges solved
     solved_count = (
         Submission.objects
         .filter(user=profile_user, status="passed")
@@ -187,15 +174,9 @@ def profile_page(request, username=None):
         .order_by("-created_at")[:10]
     )
 
-<<<<<<< HEAD
-    # 5) Badges (if you have a ManyToMany on Profile)
-    profile = profile_user.profile
-    badges = profile.badges.all() if hasattr(profile, "badges") else []
-=======
     # 5) Badges (via User → UserBadge → Badge M2M)
     profile = profile_user.profile
     badges = profile_user.badges.all()
->>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
 
     # 6) Skills (based on tags of passed submissions)
     skills = []
@@ -225,6 +206,8 @@ def profile_page(request, username=None):
         "solved_count": solved_count,
     }
     return render(request, "profile.html", context)
+
+
 @staff_or_superuser_required
 @login_required
 def mentor_dashboard(request):
@@ -246,7 +229,6 @@ def mentor_dashboard(request):
     total_submissions = Submission.objects.filter(
         challenge__classroom__in=classrooms
     ).count()
-
 
     recent_submissions = (
         Submission.objects.filter(challenge__classroom__in=classrooms)
@@ -274,7 +256,6 @@ def mentor_edit_challenge(request, challenge_slug):
     challenge = get_object_or_404(Challenge, slug=challenge_slug)
     classroom = challenge.classroom
 
-    # permission: only classroom mentor, staff, or superuser
     if classroom.mentor != request.user and not (request.user.is_staff or request.user.is_superuser):
         messages.error(request, "You are not allowed to edit this challenge.")
         return redirect("classroom_detail", classroom.slug)
@@ -320,7 +301,6 @@ def mentor_edit_challenge(request, challenge_slug):
 def mentor_create_challenge(request, classroom_slug):
     classroom = get_object_or_404(Classroom, slug=classroom_slug)
 
-    # Only classroom mentor / staff can create
     if classroom.mentor != request.user and not (request.user.is_staff or request.user.is_superuser):
         messages.error(request, "You are not allowed to create challenges for this classroom.")
         return redirect("classroom_detail", classroom.id, classroom.slug)
@@ -357,7 +337,6 @@ def mentor_create_challenge(request, classroom_slug):
         sample_output=sample_output,
         constraints=constraints,
         starter_code=starter_code,
-        # hidden_tests uses default
     )
 
     messages.success(request, "Challenge created successfully.")
@@ -367,17 +346,14 @@ def mentor_create_challenge(request, classroom_slug):
 # --------------- CLASSROOMS ---------------
 @login_required
 def mentor_create_classroom(request):
-    # Only allow POST
     if request.method != "POST":
-        return redirect("mentor_dashboard")  # change to your dashboard url name
+        return redirect("mentor_dashboard")
 
-    # Optional: check that user is mentor or staff
     is_mentor = request.user.groups.filter(name="Mentors").exists()
     if not (is_mentor or request.user.is_staff or request.user.is_superuser):
         messages.error(request, "You do not have permission to create a classroom.")
         return redirect("mentor_dashboard")
 
-    # Get form data
     name = request.POST.get("name", "").strip()
     description = request.POST.get("description", "").strip()
 
@@ -385,7 +361,6 @@ def mentor_create_classroom(request):
         messages.error(request, "Classroom name is required.")
         return redirect("mentor_dashboard")
 
-    # Create classroom; slug will be auto-generated by model.save()
     Classroom.objects.create(
         name=name,
         description=description,
@@ -395,11 +370,11 @@ def mentor_create_classroom(request):
     messages.success(request, "Classroom created successfully.")
     return redirect("classrooms_page")
 
+
 def classrooms_page(request):
     if not request.user.is_authenticated:
         return render(request, "not_found.html")
 
-    # ---------- Stats used in student view ----------
     joined_classrooms_count = ClassroomMembership.objects.filter(
         user=request.user
     ).count()
@@ -409,17 +384,14 @@ def classrooms_page(request):
         status='passed'
     ).values("challenge").distinct().count()
 
-
     # ---------- Mentor view ----------
     if request.user.is_staff:
-        # Only this mentor's classrooms
         classrooms = Classroom.objects.filter(
             mentor=request.user
         ).annotate(
             members_count=Count("memberships")
         )
 
-        # Mentor stats
         mentor_active_classrooms = classrooms.count()
 
         mentor_total_students = ClassroomMembership.objects.filter(
@@ -430,7 +402,6 @@ def classrooms_page(request):
             classroom__mentor=request.user
         ).count()
 
-        # Avg completion: distinct (user, challenge) that passed
         total_passed = Submission.objects.filter(
             status='passed',
             challenge__classroom__mentor=request.user
@@ -447,7 +418,6 @@ def classrooms_page(request):
             "mentor_total_students": mentor_total_students,
             "mentor_total_challenges": mentor_total_challenges,
             "mentor_avg_completion": mentor_avg_completion,
-            # student stats (not used in mentor branch, but safe to pass)
             "joined_classrooms_count": joined_classrooms_count,
             "total_completed_challenges": total_completed_challenges,
         }
@@ -471,7 +441,6 @@ def classroom_detail(request, slug=None):
     if not request.user.is_authenticated:
         return render(request, "not_found.html")
 
-    # classroom with members + challenges counts
     classroom = get_object_or_404(
         Classroom.objects.annotate(
             members_count=Count("memberships", distinct=True),
@@ -480,17 +449,13 @@ def classroom_detail(request, slug=None):
         slug=slug,
     )
 
-
-    # is current user a member?
     is_member = ClassroomMembership.objects.filter(
         user=request.user,
         classroom=classroom,
     ).exists()
-    
-    # all challenges in this classroom
+
     challenges = classroom.challenges.all().prefetch_related("tags", "submissions")
 
-    # build status per challenge
     challenge_entries = []
     completed_count = 0
 
@@ -502,7 +467,6 @@ def classroom_detail(request, slug=None):
 
     total_challenges = challenges.count()
 
-    # progress %
     progress_percent = 0
     if total_challenges:
         progress_percent = round((completed_count / total_challenges) * 100)
@@ -512,12 +476,13 @@ def classroom_detail(request, slug=None):
         "is_member": is_member,
         "members_count": classroom.members_count,
         "challenges_count": classroom.challenges_count,
-        "challenges": challenges,              # raw list if you still need it
-        "challenge_entries": challenge_entries,  # for status badges in template
+        "challenges": challenges,
+        "challenge_entries": challenge_entries,
         "completed_count": completed_count,
         "progress_percent": progress_percent,
     }
     return render(request, "classroom_details.html", context)
+
 
 def join_classroom(request, slug):
     if not request.user.is_authenticated:
@@ -558,7 +523,6 @@ def leave_classroom(request, slug):
     return redirect("classrooms_page")
 
 
-
 # ------------ CHALLENGES ------------
 
 def get_user_challenge_status(user, challenge):
@@ -571,54 +535,32 @@ def get_user_challenge_status(user, challenge):
         return "passed"
 
     # has submissions but none passed
-<<<<<<< HEAD
-    return "failed"
-=======
     return "in_progress"
->>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
 
 
 def challenge_list(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
-    # --------------------------------------------------
-    # 1) Decide base queryset depending on role
-    # --------------------------------------------------
-
-    # Classrooms where the user is the mentor
     mentor_classrooms = Classroom.objects.filter(mentor=request.user)
 
     if mentor_classrooms.exists():
-        # USER IS A MENTOR → show challenges from their classrooms
         challenges = Challenge.objects.filter(
             classroom__in=mentor_classrooms
-<<<<<<< HEAD
-        )
-=======
         ).annotate(solved_count=Count("submissions", filter=Q(submissions__status="passed"), distinct=True))
->>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
         classrooms = mentor_classrooms
     else:
-        # USER IS A STUDENT → show challenges from classrooms they joined
         joined_classroom_ids = ClassroomMembership.objects.filter(
             user=request.user
         ).values_list("classroom_id", flat=True)
 
         challenges = Challenge.objects.filter(
             classroom_id__in=joined_classroom_ids
-<<<<<<< HEAD
-        )
-=======
         ).annotate(solved_count=Count("submissions", filter=Q(submissions__status="passed"), distinct=True))
->>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
         classrooms = Classroom.objects.filter(
             id__in=joined_classroom_ids
         )
 
-    # --------------------------------------------------
-    # 2) Common filters (work for both mentor & student)
-    # --------------------------------------------------
     tags = Tag.objects.all()
 
     difficulty = request.GET.get("difficulty")
@@ -651,47 +593,25 @@ def challenge_list(request):
     return render(request, "challenges.html", context)
 
 
-# my_app/views.py
-
-from datetime import timedelta
-
-from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Q, Value, IntegerField
-from django.shortcuts import render
-from django.utils import timezone
-
-from .models import Profile, Submission, Classroom, ClassroomMembership
-
-
 @login_required
 def leaderboard_page(request):
-    # ----------------- 1) Read filters from query string -----------------
-    selected_time = request.GET.get("time", "all")          # all | week | month
-    selected_classroom = request.GET.get("classroom", "all")  # all | classroom id
-    selected_sort = request.GET.get("sort", "points")       # points | challenges | streak
+    selected_time = request.GET.get("time", "all")
+    selected_classroom = request.GET.get("classroom", "all")
+    selected_sort = request.GET.get("sort", "points")
 
-    # ----------------- 2) Base queryset: all profiles --------------------
     profiles = Profile.objects.select_related("user")
 
-    # ----------------- 3) Filter by classroom (if selected) -------------
     if selected_classroom != "all":
         try:
             classroom_id = int(selected_classroom)
             profiles = profiles.filter(
-<<<<<<< HEAD
-                user__classroommembership__classroom_id=classroom_id
-=======
                 user__user_joined_classes__classroom_id=classroom_id
->>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
             )
         except ValueError:
-            # Invalid value – fall back to "all"
             selected_classroom = "all"
 
     classrooms = Classroom.objects.all()
 
-    # ----------------- 4) Build submission queryset for solved ---------- 
-    # We assume Submission has: user, status, created_at
     solved_submissions = Submission.objects.filter(status="passed")
 
     now = timezone.now()
@@ -703,12 +623,7 @@ def leaderboard_page(request):
         solved_submissions = solved_submissions.filter(
             created_at__gte=now - timedelta(days=30)
         )
-    # if "all", no date filter
 
-    # ----------------- 5) Annotate stats on profiles --------------------
-    # points  -> Profile.points (all-time)
-    # solved_count -> how many passed submissions in selected time window
-    # badges_count, streak -> dummy values (0) so template works
     profiles = profiles.annotate(
         solved_count=Count(
             "user__submissions",
@@ -719,17 +634,15 @@ def leaderboard_page(request):
         streak=Value(0, output_field=IntegerField()),
     )
 
-    # ----------------- 6) Sorting --------------------------------------
     if selected_sort == "challenges":
         profiles = profiles.order_by("-solved_count", "-points", "user__username")
     elif selected_sort == "streak":
         profiles = profiles.order_by("-streak", "-points", "user__username")
-    else:  # default: points
+    else:
         profiles = profiles.order_by("-points", "-solved_count", "user__username")
 
     leaderboard = list(profiles)
 
-    # ----------------- 7) Current user rank + points --------------------
     user_rank = None
     user_points = 0
 
@@ -746,7 +659,6 @@ def leaderboard_page(request):
         created_at__gte=week_start,
     ).count()
 
-    # ----------------- 9) Context for template -------------------------
     context = {
         "leaderboard": leaderboard,
         "classrooms": classrooms,
@@ -763,7 +675,49 @@ def leaderboard_page(request):
     return render(request, "leaderboard.html", context)
 
 
-<<<<<<< HEAD
+class AddCommentView(View):
+    def post(self, request, challenge_slug):
+        if not request.user.is_authenticated:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'error': 'Authentication required'}, status=401)
+            return redirect("login")
+
+        challenge = get_object_or_404(Challenge, slug=challenge_slug)
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            try:
+                data = json.loads(request.body)
+                content = data.get('content', '').strip()
+            except json.JSONDecodeError:
+                return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        else:
+            content = request.POST.get("content", "").strip()
+
+        if not content:
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({'error': 'Comment cannot be empty'}, status=400)
+            return redirect("challenge_detail", challenge_slug=challenge.slug)
+
+        comment = Comment.objects.create(
+            challenge=challenge,
+            user=request.user,
+            content=content,
+        )
+
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': True,
+                'comment': {
+                    'id': comment.id,
+                    'user': request.user.username,
+                    'content': comment.content,
+                    'created_at': comment.created_at.isoformat(),
+                }
+            })
+
+        return redirect("challenge_detail", challenge_slug=challenge.slug)
+
+
 class ChallengeDetailView(View):
     def get(self, request, challenge_slug):
         if not request.user.is_authenticated:
@@ -771,15 +725,12 @@ class ChallengeDetailView(View):
 
         challenge = get_object_or_404(Challenge, slug=challenge_slug)
 
-        # User submissions for this challenge
         submissions = challenge.submissions.filter(
             user=request.user
         ).order_by("-created_at")
 
-        # User-specific status for this challenge
         challenge_status = get_user_challenge_status(request.user, challenge)
 
-        # All comments for this challenge
         comments_qs = challenge.comments.all().order_by("-created_at")
 
         paginator = Paginator(comments_qs, 5)
@@ -795,120 +746,32 @@ class ChallengeDetailView(View):
         }
         return render(request, "challenge_details.html", context)
 
-=======
->>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
-class AddCommentView(View):
-    def post(self, request, challenge_slug):
-        if not request.user.is_authenticated:
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'error': 'Authentication required'}, status=401)
-            return redirect("login")
-
-        challenge = get_object_or_404(Challenge, slug=challenge_slug)
-
-        # تحقق مما إذا كان الطلب AJAX أم لا
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            # AJAX request - معالجة JSON
-            try:
-                data = json.loads(request.body)
-                content = data.get('content', '').strip()
-            except json.JSONDecodeError:
-                return JsonResponse({'error': 'Invalid JSON'}, status=400)
-        else:
-            # Regular form submission
-            content = request.POST.get("content", "").strip()
-
-        if not content:
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                return JsonResponse({'error': 'Comment cannot be empty'}, status=400)
-            return redirect("challenge_detail", challenge_slug=challenge.slug)
-
-        # إنشاء التعليق
-        comment = Comment.objects.create(
-            challenge=challenge,
-            user=request.user,
-            content=content,
-        )
-
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            # رد JSON للـ AJAX
-            return JsonResponse({
-                'success': True,
-                'comment': {
-                    'id': comment.id,
-                    'user': request.user.username,
-                    'content': comment.content,
-                    'created_at': comment.created_at.isoformat(),
-                }
-            })
-        
-        # Regular request - إعادة توجيه
-        return redirect("challenge_detail", challenge_slug=challenge.slug)
-
-class ChallengeDetailView(View):
-    def get(self, request, challenge_slug):
-        if not request.user.is_authenticated:
-            return render(request, "not_found.html")
-
-        challenge = get_object_or_404(Challenge, slug=challenge_slug)
-
-        # User submissions for this challenge
-        submissions = challenge.submissions.filter(
-            user=request.user
-        ).order_by("-created_at")
-
-        # User-specific status for this challenge
-        challenge_status = get_user_challenge_status(request.user, challenge)
-
-        # All comments for this challenge
-        comments_qs = challenge.comments.all().order_by("-created_at")
-
-        paginator = Paginator(comments_qs, 5)
-        page_number = request.GET.get("page")
-        page_obj = paginator.get_page(page_number)
-
-        context = {
-            "challenge": challenge,
-            "submissions": submissions,
-            "comments": page_obj,
-            "page_obj": page_obj,
-            "challenge_status": challenge_status,   # <<< NEW
-        }
-        return render(request, "challenge_details.html", context)
-
 
 @require_POST
 def challenge_submit(request, challenge_slug):
-    # 1) Check authentication
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Not authenticated"}, status=403)
 
-    # 2) Get the challenge
     challenge = get_object_or_404(Challenge, slug=challenge_slug)
 
-    # 3) Read and validate code
     user_code = (request.POST.get("code") or "").strip()
     language = request.POST.get("language", "python")
 
     if not user_code:
         return JsonResponse({"error": "Code is required"}, status=400)
 
-    # 4) Validate language against Submission choices
     valid_languages = {choice[0] for choice in Submission.LANGUAGE_CHOICES}
     if language not in valid_languages:
         language = "python"
 
-    # 5) Get hidden tests (list of dicts: {"input": "...", "output": "..."})
     tests = challenge.hidden_tests or []
 
-    # 6) Count previous attempts for this user + challenge
     previous_attempts = Submission.objects.filter(
         user=request.user,
         challenge=challenge,
     ).count()
     attempt_number = previous_attempts + 1
 
-    # 7) Create a new Submission with status "pending"
     submission = Submission.objects.create(
         user=request.user,
         challenge=challenge,
@@ -921,11 +784,9 @@ def challenge_submit(request, challenge_slug):
     all_passed = True
     results = []
 
-    # 8) Run all hidden tests
     for test in tests:
         test_input = test.get("input", "")
         expected_output = (test.get("output", "") or "").strip()
-
 
         ok, actual_output = run_python_code(user_code, test_input)
         actual_output = (actual_output or "").strip()
@@ -942,16 +803,13 @@ def challenge_submit(request, challenge_slug):
         if not passed:
             all_passed = False
 
-    # 9) Update submission status
     submission.status = "passed" if all_passed else "failed"
     submission.save(update_fields=["status"])
 
-    # 10) Award points (your helper can set submission.points_awarded internally)
     points_awarded = award_points_for_submission(submission)
     if submission.status == "passed":
         check_user_badges(request.user)
 
-    # 11) Return response to the frontend
     return JsonResponse({
         "status": submission.status,
         "results": results,
@@ -999,34 +857,26 @@ def run_tests_view(request, challenge_slug):
         }
     )
 
-def run_python_code(user_code: str, test_input: str):
 
-<<<<<<< HEAD
-    # Split the test input into lines (e.g. "7\n" -> ["7"])
-=======
+def run_python_code(user_code: str, test_input: str):
     # Split the test input into lines ("7\n" -> ["7"])
->>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
     input_lines = test_input.splitlines()
     pointer = 0
 
-    # Fake input()
     def fake_input(prompt=None):
         nonlocal pointer
         if pointer < len(input_lines):
             value = input_lines[pointer]
             pointer += 1
             return value
-        # if code calls input() too many times, return empty string
         return ""
 
-    # Fake print()
     output_lines = []
 
     def fake_print(*args, **kwargs):
         text = " ".join(str(a) for a in args)
         output_lines.append(text)
 
-    # Environment in which user code runs
     env = {
         "input": fake_input,
         "print": fake_print,
@@ -1040,28 +890,21 @@ def run_python_code(user_code: str, test_input: str):
     try:
         exec(user_code, env, {})
     except Exception as e:
-        # we return a special marker so we see errors
         return False, f"__ERROR__ {type(e).__name__}: {e}"
 
-    # Join all printed lines with newlines
     return True, "\n".join(output_lines) + "\n"
 
-def award_points_for_submission(submission):
 
+def award_points_for_submission(submission):
     # 1) Only passed submissions can get points
     if submission.status != "passed":
-        # Ensure failed submissions give 0 points
         if submission.points_awarded != 0:
             submission.points_awarded = 0
             submission.save(update_fields=["points_awarded"])
-<<<<<<< HEAD
-        return
-=======
         return 0
->>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
 
     # 2) Check if this user already got points for THIS challenge
-    from .models import Submission, Profile  
+    from .models import Submission, Profile
 
     already_rewarded = Submission.objects.filter(
         user=submission.user,
@@ -1074,11 +917,7 @@ def award_points_for_submission(submission):
         if submission.points_awarded != 0:
             submission.points_awarded = 0
             submission.save(update_fields=["points_awarded"])
-<<<<<<< HEAD
-        return
-=======
         return 0
->>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
 
     # 3) First time solving this challenge successfully → award points
     challenge_points = submission.challenge.points
@@ -1090,16 +929,14 @@ def award_points_for_submission(submission):
     profile.points = (profile.points or 0) + challenge_points
     profile.save(update_fields=["points"])
 
-<<<<<<< HEAD
-=======
     return challenge_points
 
->>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         Profile.objects.create(user=instance)
+
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def save_user_profile(sender, instance, **kwargs):
