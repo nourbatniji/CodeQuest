@@ -781,27 +781,38 @@ def challenge_submit(request, challenge_slug):
         attempt_number=attempt_number,
     )
 
-    all_passed = True
     results = []
 
-    for test in tests:
-        test_input = test.get("input", "")
-        expected_output = (test.get("output", "") or "").strip()
+    if not tests:
+        # No hidden tests configured — just check the code runs without error
+        ok, output = run_python_code(user_code, "")
+        all_passed = ok
+        results = [{
+            "input": "",
+            "expected": "(no hidden tests)",
+            "user_output": output if ok else output,
+            "passed": ok,
+        }]
+    else:
+        all_passed = True
+        for test in tests:
+            test_input = test.get("input", "")
+            expected_output = (test.get("output", "") or "").strip()
 
-        ok, actual_output = run_python_code(user_code, test_input)
-        actual_output = (actual_output or "").strip()
+            ok, actual_output = run_python_code(user_code, test_input)
+            actual_output = (actual_output or "").strip()
 
-        passed = ok and (actual_output == expected_output)
+            passed = ok and (actual_output == expected_output)
 
-        results.append({
-            "input": test_input,
-            "expected": expected_output,
-            "user_output": actual_output,
-            "passed": passed,
-        })
+            results.append({
+                "input": test_input,
+                "expected": expected_output,
+                "user_output": actual_output,
+                "passed": passed,
+            })
 
-        if not passed:
-            all_passed = False
+            if not passed:
+                all_passed = False
 
     submission.status = "passed" if all_passed else "failed"
     submission.save(update_fields=["status"])
@@ -859,7 +870,8 @@ def run_tests_view(request, challenge_slug):
 
 
 def run_python_code(user_code: str, test_input: str):
-    # Split the test input into lines ("7\n" -> ["7"])
+    import builtins
+
     input_lines = test_input.splitlines()
     pointer = 0
 
@@ -873,26 +885,28 @@ def run_python_code(user_code: str, test_input: str):
 
     output_lines = []
 
-    def fake_print(*args, **kwargs):
-        text = " ".join(str(a) for a in args)
+    def fake_print(*args, sep=" ", end="\n", **kwargs):
+        text = sep.join(str(a) for a in args)
         output_lines.append(text)
 
-    env = {
-        "input": fake_input,
-        "print": fake_print,
-        "range": range,
-        "len": len,
-        "int": int,
-        "float": float,
-        "str": str,
+    # Expose all safe builtins so student code can use list, dict, map, etc.
+    safe_builtins = {
+        k: getattr(builtins, k)
+        for k in dir(builtins)
+        if not k.startswith("_")
+        and k not in ("open", "exec", "eval", "compile", "__import__", "breakpoint", "exit", "quit")
     }
+    safe_builtins["input"] = fake_input
+    safe_builtins["print"] = fake_print
+
+    env = {"__builtins__": safe_builtins}
 
     try:
-        exec(user_code, env, {})
+        exec(user_code, env)
     except Exception as e:
         return False, f"__ERROR__ {type(e).__name__}: {e}"
 
-    return True, "\n".join(output_lines) + "\n"
+    return True, "\n".join(output_lines)
 
 
 def award_points_for_submission(submission):
