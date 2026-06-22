@@ -625,12 +625,13 @@ def leaderboard_page(request):
         )
 
     profiles = profiles.annotate(
+        total_points=F("points"),
         solved_count=Count(
             "user__submissions",
             filter=Q(user__submissions__in=solved_submissions),
             distinct=True,
         ),
-        badges_count=Value(0, output_field=IntegerField()),
+        badges_count=Count("user__userbadge", distinct=True),
         streak=Value(0, output_field=IntegerField()),
     )
 
