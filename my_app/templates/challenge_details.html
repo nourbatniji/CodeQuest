@@ -104,8 +104,24 @@
         <form method="POST" action="{% url 'challenge_submit' challenge.slug %}">
             {% csrf_token %}
             <textarea id="code-editor" class="code-editor" name="code" placeholder="Write your solution here..."
-                spellcheck="false">{{ challenge.starter_code }}
-            </textarea>
+                spellcheck="false">{{ editor_code }}</textarea>
+            {% if challenge.starter_code %}
+            {{ challenge.starter_code|json_script:"starter-code-data" }}
+            <div style="margin-top:0.5rem;">
+                <button type="button" onclick="loadStarterCode()" style="background:none; border:none; color:var(--text-tertiary); font-size:0.8rem; cursor:pointer; padding:0;">
+                    <i class="fas fa-code"></i> Load starter code
+                </button>
+            </div>
+            <script>
+                function loadStarterCode() {
+                    const code = JSON.parse(document.getElementById('starter-code-data').textContent);
+                    const editor = document.getElementById('code-editor');
+                    if (!editor.value.trim() || confirm('This will replace your current code. Continue?')) {
+                        editor.value = code;
+                    }
+                }
+            </script>
+            {% endif %}
             <div style="display: flex; gap: 1rem; margin-top: 1rem;">
                 <button id="submit-btn" type="submit" class="btn-modern btn-primary" style="flex: 1;">
                     <i class="fas fa-paper-plane"></i>

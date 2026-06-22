@@ -730,6 +730,9 @@ class ChallengeDetailView(View):
             user=request.user
         ).order_by("-created_at")
 
+        last_submission = submissions.first()
+        editor_code = last_submission.code if last_submission else ""
+
         challenge_status = get_user_challenge_status(request.user, challenge)
 
         comments_qs = challenge.comments.all().order_by("-created_at")
@@ -741,6 +744,7 @@ class ChallengeDetailView(View):
         context = {
             "challenge": challenge,
             "submissions": submissions,
+            "editor_code": editor_code,
             "comments": page_obj,
             "page_obj": page_obj,
             "challenge_status": challenge_status,
