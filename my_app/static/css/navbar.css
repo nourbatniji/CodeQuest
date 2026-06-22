@@ -1,8 +1,12 @@
 .navbar-codequest {
+    position: sticky;
+    top: 0;
+    z-index: 1030;
     border-bottom: 1px solid var(--border-color);
     box-shadow: var(--shadow-sm);
     padding: 0.75rem 0;
     transition: all var(--transition-base);
+    backdrop-filter: blur(8px);
 }
 
 .navbar-codequest .navbar-brand {
