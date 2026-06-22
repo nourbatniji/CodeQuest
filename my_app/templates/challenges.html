@@ -16,35 +16,32 @@
 </div>
 
 <!-- Filters -->
-<div class="animate-fade-in" style="margin-bottom: 1.5rem;">
+<div class="leaderboard-filters animate-fade-in">
     <form method="get" id="filterForm">
-        <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+        <div style="display:flex; gap:0.75rem; align-items:center; flex-wrap:nowrap;">
 
             <!-- Search -->
-            <div style="position: relative; flex: 2; min-width: 200px;">
-                <i class="fas fa-search" style="position:absolute; left:0.9rem; top:50%; transform:translateY(-50%); color:var(--text-tertiary); pointer-events:none;"></i>
+            <div style="position:relative; flex:2;">
+                <i class="fas fa-search" style="position:absolute; left:0.85rem; top:50%; transform:translateY(-50%); color:var(--text-tertiary); font-size:0.85rem; pointer-events:none;"></i>
                 <input type="text" name="search" id="searchChallenges"
                     value="{{ request.GET.search }}"
                     placeholder="Search by title or tag…"
                     autocomplete="off"
-                    style="width:100%; padding:0.6rem 2.25rem 0.6rem 2.4rem; background:var(--surface-2,#1e1e2e); border:1.5px solid var(--border-color); border-radius:8px; color:var(--text-primary); font-size:0.875rem; outline:none; box-sizing:border-box; transition:border-color 0.2s, box-shadow 0.2s;"
-                    onfocus="this.style.borderColor='var(--primary-500)';this.style.boxShadow='0 0 0 3px rgba(139,92,246,0.15)'"
+                    style="width:100%; padding:0.6rem 0.75rem 0.6rem 2.3rem; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:var(--radius-md); color:var(--text-primary); font-size:0.875rem; outline:none; box-sizing:border-box; transition:border-color 0.2s, box-shadow 0.2s;"
+                    onfocus="this.style.borderColor='var(--primary-500)';this.style.boxShadow='0 0 0 3px rgba(168,85,247,0.08)'"
                     onblur="this.style.borderColor='var(--border-color)';this.style.boxShadow='none'">
-                {% if request.GET.search %}
-                <a href="?" style="position:absolute; right:0.6rem; top:50%; transform:translateY(-50%); color:var(--text-tertiary); text-decoration:none;" title="Clear"><i class="fas fa-times-circle"></i></a>
-                {% endif %}
             </div>
 
             <!-- Difficulty -->
-            <select class="filter-select" name="difficulty" onchange="this.form.submit()" style="border-radius:8px; padding:0.6rem 0.75rem; font-size:0.875rem; min-width:120px;">
+            <select class="filter-select" name="difficulty" onchange="this.form.submit()" style="flex:1;">
                 <option value="all">All Levels</option>
-                <option value="easy"   {% if selected_difficulty == "easy"   %}selected{% endif %}>🟢 Easy</option>
-                <option value="medium" {% if selected_difficulty == "medium" %}selected{% endif %}>🟡 Medium</option>
-                <option value="hard"   {% if selected_difficulty == "hard"   %}selected{% endif %}>🔴 Hard</option>
+                <option value="easy"   {% if selected_difficulty == "easy"   %}selected{% endif %}>Easy</option>
+                <option value="medium" {% if selected_difficulty == "medium" %}selected{% endif %}>Medium</option>
+                <option value="hard"   {% if selected_difficulty == "hard"   %}selected{% endif %}>Hard</option>
             </select>
 
             <!-- Classroom -->
-            <select class="filter-select" name="classroom" onchange="this.form.submit()" style="border-radius:8px; padding:0.6rem 0.75rem; font-size:0.875rem; min-width:140px;">
+            <select class="filter-select" name="classroom" onchange="this.form.submit()" style="flex:1;">
                 <option value="">All Classrooms</option>
                 {% for c in classrooms %}
                 <option value="{{ c.id }}" {% if selected_classroom|stringformat:"s" == c.id|stringformat:"s" %}selected{% endif %}>{{ c.name }}</option>
@@ -52,15 +49,14 @@
             </select>
 
             <!-- Tags -->
-            <select class="filter-select" name="tag" onchange="this.form.submit()" style="border-radius:8px; padding:0.6rem 0.75rem; font-size:0.875rem; min-width:120px;">
+            <select class="filter-select" name="tag" onchange="this.form.submit()" style="flex:1;">
                 <option value="">All Tags</option>
                 {% for t in tags %}
                 <option value="{{ t.id }}" {% if selected_tag|stringformat:"s" == t.id|stringformat:"s" %}selected{% endif %}>{{ t.name }}</option>
                 {% endfor %}
             </select>
 
-            <!-- Search button -->
-            <button type="submit" class="btn-modern btn-primary" style="padding:0.6rem 1.1rem; border-radius:8px; font-size:0.875rem; white-space:nowrap;">
+            <button type="submit" class="btn-modern btn-primary" style="white-space:nowrap; padding:0.625rem 1rem;">
                 <i class="fas fa-search"></i> Search
             </button>
 

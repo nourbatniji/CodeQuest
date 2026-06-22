@@ -62,20 +62,20 @@
 
 <!-- Mentor Filters -->
 <div class="leaderboard-filters animate-fade-in" style="margin-bottom: 2rem;">
-    <div class="filter-row">
-        <div class="filter-group" style="flex: 2;">
-            <label class="filter-label">Search My Classrooms</label>
-            <input type="text" class="form-control-modern" placeholder="Search by name..." id="searchClassrooms">
+    <div style="display:flex; gap:0.75rem; align-items:center;">
+        <div style="position:relative; flex:2;">
+            <i class="fas fa-search" style="position:absolute; left:0.85rem; top:50%; transform:translateY(-50%); color:var(--text-tertiary); font-size:0.85rem; pointer-events:none;"></i>
+            <input type="text" placeholder="Search classrooms by name…" id="searchClassrooms"
+                style="width:100%; padding:0.6rem 0.75rem 0.6rem 2.3rem; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:var(--radius-md); color:var(--text-primary); font-size:0.875rem; outline:none; box-sizing:border-box; transition:border-color 0.2s, box-shadow 0.2s;"
+                onfocus="this.style.borderColor='var(--primary-500)';this.style.boxShadow='0 0 0 3px rgba(168,85,247,0.08)'"
+                onblur="this.style.borderColor='var(--border-color)';this.style.boxShadow='none'">
         </div>
-        <div class="filter-group">
-            <label class="filter-label">Filter By</label>
-            <select class="filter-select">
-                <option>All Classrooms</option>
-                <option>Most Active</option>
-                <option>Needs Attention</option>
-                <option>Recently Updated</option>
-            </select>
-        </div>
+        <select class="filter-select" style="flex:1;">
+            <option>All Classrooms</option>
+            <option>Most Active</option>
+            <option>Needs Attention</option>
+            <option>Recently Updated</option>
+        </select>
     </div>
 </div>
 
@@ -120,20 +120,19 @@
 
 <!-- Student Filters -->
 <div class="leaderboard-filters animate-fade-in" style="margin-bottom: 2rem;">
-    <div class="filter-row" style="display: flex; gap: 1rem; align-items: flex-end; flex-wrap: wrap;">
-        <div class="filter-group" style="flex: 2; min-width: 200px;">
-            <label class="filter-label">Search Classrooms</label>
-            <input type="text" class="form-control-modern" placeholder="Search by name or mentor..."
-                id="searchClassrooms">
+    <div style="display:flex; gap:0.75rem; align-items:center;">
+        <div style="position:relative; flex:2;">
+            <i class="fas fa-search" style="position:absolute; left:0.85rem; top:50%; transform:translateY(-50%); color:var(--text-tertiary); font-size:0.85rem; pointer-events:none;"></i>
+            <input type="text" placeholder="Search by name or mentor…" id="searchClassrooms"
+                style="width:100%; padding:0.6rem 0.75rem 0.6rem 2.3rem; background:var(--bg-secondary); border:1px solid var(--border-color); border-radius:var(--radius-md); color:var(--text-primary); font-size:0.875rem; outline:none; box-sizing:border-box; transition:border-color 0.2s, box-shadow 0.2s;"
+                onfocus="this.style.borderColor='var(--primary-500)';this.style.boxShadow='0 0 0 3px rgba(168,85,247,0.08)'"
+                onblur="this.style.borderColor='var(--border-color)';this.style.boxShadow='none'">
         </div>
-        <div class="filter-group" style="min-width: 160px;">
-            <label class="filter-label">Sort By</label>
-            <select class="filter-select" id="sortClassrooms">
-                <option>Most Popular</option>
-                <option>Newest</option>
-                <option>Most Challenges</option>
-            </select>
-        </div>
+        <select class="filter-select" id="sortClassrooms" style="flex:1;">
+            <option>Most Popular</option>
+            <option>Newest</option>
+            <option>Most Challenges</option>
+        </select>
     </div>
 </div>
 {% endif %}
