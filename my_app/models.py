@@ -54,9 +54,12 @@ def validate_login(postData):
     if not is_exist(postData['email']):
         login_errors['login_email_noexist'] = 'Email does not exist'
 
+<<<<<<< HEAD
     if not pass_regex.match(postData['password']) or len(postData['password']) > 128:
         login_errors['login_pass_valid'] = 'Minimum 8 characters required'
 
+=======
+>>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
     return login_errors
 
 def create_user(postData):
@@ -183,6 +186,10 @@ class Challenge(models.Model):
 
 class Submission(models.Model):
     STATUS_CHOICES = [
+<<<<<<< HEAD
+=======
+        ("pending", "Pending"),
+>>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
         ("passed", "Passed"),
         ("failed", "Failed"),
         ("error", "Error"),

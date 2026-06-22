@@ -187,9 +187,15 @@ def profile_page(request, username=None):
         .order_by("-created_at")[:10]
     )
 
+<<<<<<< HEAD
     # 5) Badges (if you have a ManyToMany on Profile)
     profile = profile_user.profile
     badges = profile.badges.all() if hasattr(profile, "badges") else []
+=======
+    # 5) Badges (via User → UserBadge → Badge M2M)
+    profile = profile_user.profile
+    badges = profile_user.badges.all()
+>>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
 
     # 6) Skills (based on tags of passed submissions)
     skills = []
@@ -565,7 +571,11 @@ def get_user_challenge_status(user, challenge):
         return "passed"
 
     # has submissions but none passed
+<<<<<<< HEAD
     return "failed"
+=======
+    return "in_progress"
+>>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
 
 
 def challenge_list(request):
@@ -583,7 +593,11 @@ def challenge_list(request):
         # USER IS A MENTOR → show challenges from their classrooms
         challenges = Challenge.objects.filter(
             classroom__in=mentor_classrooms
+<<<<<<< HEAD
         )
+=======
+        ).annotate(solved_count=Count("submissions", filter=Q(submissions__status="passed"), distinct=True))
+>>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
         classrooms = mentor_classrooms
     else:
         # USER IS A STUDENT → show challenges from classrooms they joined
@@ -593,7 +607,11 @@ def challenge_list(request):
 
         challenges = Challenge.objects.filter(
             classroom_id__in=joined_classroom_ids
+<<<<<<< HEAD
         )
+=======
+        ).annotate(solved_count=Count("submissions", filter=Q(submissions__status="passed"), distinct=True))
+>>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
         classrooms = Classroom.objects.filter(
             id__in=joined_classroom_ids
         )
@@ -660,7 +678,11 @@ def leaderboard_page(request):
         try:
             classroom_id = int(selected_classroom)
             profiles = profiles.filter(
+<<<<<<< HEAD
                 user__classroommembership__classroom_id=classroom_id
+=======
+                user__user_joined_classes__classroom_id=classroom_id
+>>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
             )
         except ValueError:
             # Invalid value – fall back to "all"
@@ -741,6 +763,7 @@ def leaderboard_page(request):
     return render(request, "leaderboard.html", context)
 
 
+<<<<<<< HEAD
 class ChallengeDetailView(View):
     def get(self, request, challenge_slug):
         if not request.user.is_authenticated:
@@ -772,6 +795,8 @@ class ChallengeDetailView(View):
         }
         return render(request, "challenge_details.html", context)
 
+=======
+>>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
 class AddCommentView(View):
     def post(self, request, challenge_slug):
         if not request.user.is_authenticated:
@@ -976,7 +1001,11 @@ def run_tests_view(request, challenge_slug):
 
 def run_python_code(user_code: str, test_input: str):
 
+<<<<<<< HEAD
     # Split the test input into lines (e.g. "7\n" -> ["7"])
+=======
+    # Split the test input into lines ("7\n" -> ["7"])
+>>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
     input_lines = test_input.splitlines()
     pointer = 0
 
@@ -1025,7 +1054,11 @@ def award_points_for_submission(submission):
         if submission.points_awarded != 0:
             submission.points_awarded = 0
             submission.save(update_fields=["points_awarded"])
+<<<<<<< HEAD
         return
+=======
+        return 0
+>>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
 
     # 2) Check if this user already got points for THIS challenge
     from .models import Submission, Profile  
@@ -1041,7 +1074,11 @@ def award_points_for_submission(submission):
         if submission.points_awarded != 0:
             submission.points_awarded = 0
             submission.save(update_fields=["points_awarded"])
+<<<<<<< HEAD
         return
+=======
+        return 0
+>>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
 
     # 3) First time solving this challenge successfully → award points
     challenge_points = submission.challenge.points
@@ -1053,6 +1090,11 @@ def award_points_for_submission(submission):
     profile.points = (profile.points or 0) + challenge_points
     profile.save(update_fields=["points"])
 
+<<<<<<< HEAD
+=======
+    return challenge_points
+
+>>>>>>> 6ae3b00 (Fix 9 bugs: login validation, duplicate class, points return value, status choices, leaderboard filter, profile badges, solved_count annotation, challenge status, duplicate div ID)
 
 @receiver(post_save, sender=settings.AUTH_USER_MODEL)
 def create_user_profile(sender, instance, created, **kwargs):
