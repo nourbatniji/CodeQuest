@@ -6,23 +6,6 @@ This project follows the 10-day AXSOS Project Week workflow, using Scrum methodo
 
 ---
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Features](#features)
-- [System Pages](#system-pages)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Database Models](#database-models)
-- [API Endpoints](#api-endpoints)
-- [Installation & Setup](#installation--setup)
-- [Running the Project](#running-the-project)
-- [Deployment](#deployment)
-- [Team & Workflow](#team--workflow)
-- [License](#license)
-
----
-
 ## Overview
 
 CodeQuest is a classroom-based coding challenge platform where:
